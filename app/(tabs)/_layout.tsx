@@ -1,12 +1,11 @@
 // app/(tabs)/_layout.tsx
-import { Tabs } from "expo-router";
-import React from "react";
-import { Platform } from "react-native";
-
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Octicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import React from "react";
+import { Platform } from "react-native";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -38,18 +37,18 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              size={24}
-              color={color}
+            <Octicons
+              name="home"
+              size={22}
+              color={focused ? colors.primary : color}
             />
           ),
         }}
       />
       <Tabs.Screen
-        name="workouts"
+        name="diet-plans"
         options={{
-          title: "Workouts",
+          title: "Diet Plans",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "barbell" : "barbell-outline"}
@@ -59,6 +58,7 @@ export default function TabLayout() {
           ),
         }}
       />
+     
       <Tabs.Screen
         name="attendance"
         options={{
