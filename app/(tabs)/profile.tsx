@@ -48,44 +48,6 @@ export default function Profile() {
       route: "/membership-history",
       color: colors.primary,
     },
-    {
-      icon: "calendar",
-      title: "Attendance",
-      subtitle: "Check your workout log",
-      route: "/attendance",
-      color: colors.secondary,
-    },
-    {
-      icon: "wallet",
-      title: "Balance & Payments",
-      subtitle:
-        balance.partyMoneyType === "SETTLED"
-          ? "All settled"
-          : `₹${balance.amt} pending`,
-      route: "/payments",
-      color: colors.success,
-    },
-    {
-      icon: "restaurant",
-      title: "Diet Plans",
-      subtitle: "Your nutrition guide",
-      route: "/diet-plans",
-      color: "#10B981",
-    },
-    {
-      icon: "cart",
-      title: "Products & Purchases",
-      subtitle: "Shop supplements",
-      route: "/products",
-      color: "#8B5CF6",
-    },
-    {
-      icon: "notifications",
-      title: "Notifications",
-      subtitle: "Stay updated",
-      route: "/notifications",
-      color: "#F59E0B",
-    },
   ];
 
   const stats = [

@@ -36,12 +36,6 @@ export default function Home() {
 
   const quickActions = [
     {
-      icon: "qr-code",
-      title: "Scan QR",
-      color: colors.primary,
-      route: "/scan-qr",
-    },
-    {
       icon: "restaurant",
       title: "Diet Plan",
       color: "#10B981",
@@ -51,37 +45,7 @@ export default function Home() {
       icon: "cart",
       title: "Shop",
       color: "#8B5CF6",
-      route: "/products",
-    },
-    {
-      icon: "notifications",
-      title: "Alerts",
-      color: "#F59E0B",
-      route: "/notifications",
-    },
-  ];
-
-  const stats = [
-    {
-      label: "Workouts",
-      value: recentAttendance.length,
-      icon: "fitness",
-      color: colors.primary,
-      subtext: "This week",
-    },
-    {
-      label: "Calories",
-      value: "1,850",
-      icon: "flame",
-      color: "#EF4444",
-      subtext: "Burned today",
-    },
-    {
-      label: "Streak",
-      value: "12",
-      icon: "trophy",
-      color: "#F59E0B",
-      subtext: "Days active",
+      route: "/shop",
     },
   ];
 
@@ -139,7 +103,7 @@ export default function Home() {
               </View>
               <TouchableOpacity
                 style={styles.renewButton}
-                onPress={() => router.push("/membership-history")}
+                onPress={() => router.push("/attendance")}
               >
                 <Text style={styles.renewText}>View Details</Text>
                 <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
@@ -187,52 +151,6 @@ export default function Home() {
                   </Card>
                 </TouchableOpacity>
               </Animated.View>
-            ))}
-          </View>
-        </Animated.View>
-
-        {/* Stats Overview */}
-        <Animated.View
-          entering={FadeInDown.delay(400).springify()}
-          style={styles.section}
-        >
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Your Progress
-          </Text>
-          <View style={styles.statsRow}>
-            {stats.map((stat, index) => (
-              <AnimatedCard
-                key={index}
-                entering={FadeInDown.delay(450 + index * 50).springify()}
-                elevated
-                style={styles.statCard}
-              >
-                <View
-                  style={[
-                    styles.statIcon,
-                    { backgroundColor: `${stat.color}15` },
-                  ]}
-                >
-                  <Ionicons
-                    name={stat.icon as any}
-                    size={24}
-                    color={stat.color}
-                  />
-                </View>
-                <Text style={[styles.statValue, { color: colors.text }]}>
-                  {stat.value}
-                </Text>
-                <Text
-                  style={[styles.statLabel, { color: colors.textSecondary }]}
-                >
-                  {stat.label}
-                </Text>
-                <Text
-                  style={[styles.statSubtext, { color: colors.textTertiary }]}
-                >
-                  {stat.subtext}
-                </Text>
-              </AnimatedCard>
             ))}
           </View>
         </Animated.View>
@@ -353,7 +271,8 @@ export default function Home() {
             <Text
               style={[styles.motivationText, { color: colors.textSecondary }]}
             >
-              You're doing great! Stay consistent and you'll reach your goals.
+              You are doing great! Stay consistent and you will reach your
+              goals.
             </Text>
           </LinearGradient>
         </AnimatedCard>
