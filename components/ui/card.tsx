@@ -2,13 +2,13 @@
 import { Colors } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { LinearGradient } from "expo-linear-gradient";
-import { StyleSheet, View, ViewStyle } from "react-native";
+import { StyleSheet, View, ViewStyle, StyleProp } from "react-native";
 
 interface CardProps {
   children: React.ReactNode;
   gradient?: boolean;
   elevated?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>; // Changed from ViewStyle to StyleProp<ViewStyle>
 }
 
 export function Card({ children, gradient, elevated, style }: CardProps) {
@@ -18,7 +18,7 @@ export function Card({ children, gradient, elevated, style }: CardProps) {
   if (gradient) {
     return (
       <LinearGradient
-        colors={[colors.gradientStart, colors.gradientEnd]}
+        colors={[colors.gradientStart, colors. gradientEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.card, elevated && styles.elevated, style]}

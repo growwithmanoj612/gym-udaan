@@ -1,12 +1,14 @@
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuth } from "@/store/useAuth";
+import { useAuthStore } from "@/store/useAuthStore"; 
+import { useBusinessStore } from "@/store/useBusinessStore";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,52 +20,44 @@ import {
 export default function TenantSelect() {
   const router = useRouter();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
-  const { selectTenant } = useAuth();
+  const colors = Colors[colorScheme ??  "light"];
+  
+  // ✅ Zustand stores with standard selectors
+  const selectTenant = useAuthStore((state) => state.selectTenant);
+  const gyms = useBusinessStore((state) => state.businessDetails);
+  const fetchGyms = useBusinessStore((state) => state.fetchBusinessDetails);
+  const isLoading = useBusinessStore((state) => state.isLoading);
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  const gyms = [
-    {
-      id: "gym-fitness-hub",
-      name: "Gym Udaan Fitness Hub",
-      location: "3 Venues",
-      status: "Active",
-      members: 245,
-      icon: "fitness",
-    },
-    {
-      id: "gym-power-zone",
-      name: "Gym Udaan Power Zone",
-      location: "5 Venues",
-      status: "Active",
-      members: 380,
-      icon: "barbell",
-    },
-    {
-      id: "gym-elite",
-      name: "Gym Udaan Elite",
-      location: "2 Venues",
-      status: "Coming Soon",
-      members: 120,
-      icon: "trophy",
-    },
-  ];
+  useEffect(() => {
+    fetchGyms();
+  }, []);
 
-  // FILTER GYMS BASED ON SEARCH
-  const filteredGyms = useMemo(() => {
-    if (!searchQuery.trim()) return gyms;
-    return gyms.filter((gym) =>
-      `${gym.name} ${gym.location} ${gym.status}`
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery]);
+  // Filter gyms based on search
+  const filteredGyms = gyms.filter((gym) =>
+    `${gym?.businessName} ${gym?.businessAddress}`
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
+  );
 
-  const handleSelectGym = (gymId: string) => {
-    selectTenant(gymId);
+  const handleSelectGym = async (gymId: string) => {
+    await selectTenant(gymId);
     router.replace("/(auth)/login");
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors. textSecondary }]}>
+            Loading gyms...
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -74,7 +68,7 @@ export default function TenantSelect() {
         {/* Header */}
         <View style={styles.header}>
           <LinearGradient
-            colors={[colors.gradientStart, colors.gradientEnd]}
+            colors={[colors.gradientStart, colors. gradientEnd]}
             style={styles.headerIcon}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -82,7 +76,7 @@ export default function TenantSelect() {
             <Ionicons name="business" size={32} color="#FFFFFF" />
           </LinearGradient>
 
-          <Text style={[styles.title, { color: colors.text }]}>
+          <Text style={[styles. title, { color: colors.text }]}>
             Select Your Gym
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -90,7 +84,7 @@ export default function TenantSelect() {
           </Text>
         </View>
 
-        {/* 🔍 Search Bar */}
+        {/* Search Bar */}
         <TextInput
           placeholder="Search gyms..."
           placeholderTextColor={colors.textSecondary}
@@ -105,48 +99,44 @@ export default function TenantSelect() {
         {/* Gym Cards */}
         <View style={styles.gymsContainer}>
           {filteredGyms.length === 0 ? (
-            <Text style={{ textAlign: "center", color: colors.textSecondary }}>
+            <Text style={[styles.noResults, { color: colors.textSecondary }]}>
               No gyms found
             </Text>
           ) : (
             filteredGyms.map((gym) => (
               <TouchableOpacity
-                key={gym.id}
-                onPress={() => handleSelectGym(gym.id)}
+                key={gym?.id}
+                onPress={() => handleSelectGym(gym?.id?. toString())}
                 activeOpacity={0.7}
-                disabled={gym.status === "Coming Soon"}
+                // disabled={gym?.status !== 'ACTIVE'}
               >
                 <Card
                   elevated
                   style={[
                     styles.gymCard,
-                    gym.status === "Coming Soon" && styles.disabledCard,
+                    // gym?.status !== 'ACTIVE' && styles.disabledCard,
                   ]}
                 >
                   <View style={styles.gymCardHeader}>
                     <LinearGradient
                       colors={[colors.gradientStart, colors.gradientEnd]}
                       style={styles.gymIcon}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
+                      start={{ x:  0, y: 0 }}
+                      end={{ x:  1, y: 1 }}
                     >
-                      <Ionicons
-                        name={gym.icon as any}
-                        size={24}
-                        color="#FFFFFF"
-                      />
+                      <Ionicons name="fitness" size={24} color="#FFFFFF" />
                     </LinearGradient>
 
                     <View style={styles.gymInfo}>
                       <Text style={[styles.gymName, { color: colors.text }]}>
-                        {gym.name}
+                        {gym?.businessName}
                       </Text>
 
-                      <View style={styles.gymMeta}>
+                      <View style={styles. gymMeta}>
                         <Ionicons
                           name="location"
                           size={14}
-                          color={colors.textSecondary}
+                          color={colors. textSecondary}
                         />
                         <Text
                           style={[
@@ -154,7 +144,7 @@ export default function TenantSelect() {
                             { color: colors.textSecondary },
                           ]}
                         >
-                          {gym.location}
+                          {gym?.businessAddress}
                         </Text>
                       </View>
                     </View>
@@ -163,10 +153,9 @@ export default function TenantSelect() {
                       style={[
                         styles.statusBadge,
                         {
-                          backgroundColor:
-                            gym.status === "Active"
-                              ? colors.successLight
-                              : colors.warningLight,
+                          backgroundColor: 
+                           colors.successLight
+                            
                         },
                       ]}
                     >
@@ -174,39 +163,31 @@ export default function TenantSelect() {
                         style={[
                           styles.statusText,
                           {
-                            color:
-                              gym.status === "Active"
-                                ? colors.success
-                                : colors.warning,
+                            color: 
+                               colors.success
+                                 
                           },
                         ]}
                       >
-                        {gym.status}
+                       
                       </Text>
                     </View>
                   </View>
 
-                  <View style={styles.gymCardFooter}>
+                  <View style={styles. gymCardFooter}>
                     <View style={styles.statItem}>
                       <Ionicons
                         name="people"
                         size={18}
-                        color={colors.primary}
+                        color={colors. primary}
                       />
-                      <Text
-                        style={[
-                          styles.statText,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        {gym.members} Members
-                      </Text>
+                   
                     </View>
 
                     <Ionicons
                       name="chevron-forward"
                       size={20}
-                      color={colors.textTertiary}
+                      color={colors. textTertiary}
                     />
                   </View>
                 </Card>
@@ -219,11 +200,24 @@ export default function TenantSelect() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 40 },
-
-  // Search bar
+const styles = StyleSheet. create({
+  container: { 
+    flex: 1 
+  },
+  scrollContent: { 
+    paddingTop: 60, 
+    paddingHorizontal: 24, 
+    paddingBottom: 40 
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+  },
   searchInput: {
     width: "100%",
     padding: 14,
@@ -231,8 +225,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 20,
   },
-
-  header: { alignItems: "center", marginBottom: 32 },
+  header: { 
+    alignItems: "center", 
+    marginBottom: 32 
+  },
   headerIcon: {
     width: 80,
     height: 80,
@@ -241,17 +237,35 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 20,
   },
-  title: { fontSize: 28, fontWeight: "bold", marginBottom: 8 },
-  subtitle: { fontSize: 14, textAlign: "center", maxWidth: 280 },
-
-  gymsContainer: { gap: 16, marginBottom: 24 },
-  gymCard: { padding: 16 },
-  disabledCard: { opacity: 0.6 },
-
+  title:  { 
+    fontSize: 28, 
+    fontWeight: "bold", 
+    marginBottom: 8 
+  },
+  subtitle: { 
+    fontSize: 14, 
+    textAlign: "center", 
+    maxWidth: 280 
+  },
+  noResults: {
+    textAlign: "center",
+    fontSize: 14,
+    marginTop: 20,
+  },
+  gymsContainer: { 
+    gap: 16, 
+    marginBottom: 24 
+  },
+  gymCard: { 
+    padding: 16 
+  },
+  disabledCard: { 
+    opacity: 0.6 
+  },
   gymCardHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 16,
+    marginBottom:  16,
   },
   gymIcon: {
     width: 56,
@@ -261,28 +275,45 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-
-  gymInfo: { flex: 1 },
-  gymName: { fontSize: 16, fontWeight: "600", marginBottom: 6 },
-  gymMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
-  gymLocation: { fontSize: 13 },
-
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  statusText: { fontSize: 11, fontWeight: "600" },
-
+  gymInfo: { 
+    flex: 1 
+  },
+  gymName: { 
+    fontSize: 16, 
+    fontWeight: "600", 
+    marginBottom: 6 
+  },
+  gymMeta: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    gap: 4 
+  },
+  gymLocation:  { 
+    fontSize: 13 
+  },
+  statusBadge: { 
+    paddingHorizontal: 10, 
+    paddingVertical: 4, 
+    borderRadius: 12 
+  },
+  statusText:  { 
+    fontSize: 11, 
+    fontWeight: "600" 
+  },
   gymCardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems:  "center",
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: "rgba(0,0,0,0.05)",
   },
-
-  statItem: { flexDirection: "row", alignItems: "center", gap: 6 },
-  statText: { fontSize: 13 },
-
-  infoCard: { padding: 16 },
-  infoContent: { flexDirection: "row", alignItems: "center", gap: 12 },
-  infoText: { flex: 1, fontSize: 13, lineHeight: 18 },
+  statItem: { 
+    flexDirection:  "row", 
+    alignItems: "center", 
+    gap: 6 
+  },
+  statText: { 
+    fontSize: 13 
+  },
 });
