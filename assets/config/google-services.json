@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "532961091878",
+    "project_id": "gymudaanmobileapp",
+    "storage_bucket": "gymudaanmobileapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:532961091878:android:0a465af15979a1027ee1e7",
+        "android_client_info": {
+          "package_name": "com.niroj.gymudaan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC17cvZE5dYOxuosqlKBFlPzQvX4Yv55Yw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

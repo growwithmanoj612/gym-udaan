@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuth } from "@/store/useAuth";
+import { useAuthStore } from "@/store/useAuthStore";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -28,10 +28,17 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 
-const { width } = Dimensions.get("window");
+const { width } = Dimensions. get("window");
 
-// ⭐ PREMIUM Dumbbell Animation ⭐
-function usePremiumDumbbellAnimation() {
+export default function GettingStarted() {
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ??  "light"];
+  
+  // ✅ Use the store directly without auto-selector
+  const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
+
+  // ⭐ PREMIUM Dumbbell Animation ⭐
   const bounce = useSharedValue(0);
   const rotate = useSharedValue(0);
   const glow = useSharedValue(1);
@@ -50,7 +57,7 @@ function usePremiumDumbbellAnimation() {
 
     // Slow rotating
     rotate.value = withRepeat(
-      withTiming(360, { duration: 4000 }),
+      withTiming(360, { duration:  4000 }),
       -1,
       false
     );
@@ -66,17 +73,17 @@ function usePremiumDumbbellAnimation() {
     );
 
     // Breathing scale
-    scale.value = withRepeat(
+    scale. value = withRepeat(
       withSequence(
         withTiming(1.05, { duration: 900 }),
-        withTiming(1, { duration: 900 })
+        withTiming(1, { duration:  900 })
       ),
       -1,
       false
     );
   }, []);
 
-  return useAnimatedStyle(() => ({
+  const dumbbellAnim = useAnimatedStyle(() => ({
     transform: [
       { translateY: bounce.value },
       { rotate: `${rotate.value}deg` },
@@ -85,38 +92,29 @@ function usePremiumDumbbellAnimation() {
     shadowOpacity: 0.3,
     shadowRadius: 15 * glow.value,
   }));
-}
-
-export default function GettingStarted() {
-  const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
-  const { completeOnboarding } = useAuth();
-
-  const dumbbellAnim = usePremiumDumbbellAnimation();
 
   const features = [
-    { icon: "fitness", title: "25+", subtitle: "Workouts", color: colors.primary },
-    { icon: "people", title: "500+", subtitle: "Members", color: colors.secondary },
-    { icon: "trophy", title: "98%", subtitle: "Success Rate", color: colors.accent }
+    { icon:  "fitness", title:  "25+", subtitle: "Workouts", color: colors.primary },
+    { icon: "people", title: "500+", subtitle: "Members", color: colors. secondary },
+    { icon: "trophy", title: "98%", subtitle: "Success Rate", color:  colors.accent }
   ];
 
-  const handleGetStarted = () => {
-    completeOnboarding();
+  const handleGetStarted = async () => {
+    await completeOnboarding();
     router.replace("/(auth)/tenant-select");
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors. background }]}>
 
       {/* SCROLL CONTENT */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={styles. scrollContent}
       >
 
         {/* ⭐ Animated Logo Section ⭐ */}
-        <Animated.View
+        <Animated. View
           entering={ZoomIn.duration(700)}
           style={styles.logoSection}
         >
@@ -146,13 +144,13 @@ export default function GettingStarted() {
 
         {/* FEATURE CARDS */}
         <View style={styles.featuresContainer}>
-          {features.map((feature, i) => (
+          {features. map((feature, i) => (
             <Animated.View key={i} entering={FadeInUp.delay(300 + i * 150)} style={{ flex: 1 }}>
               <Card elevated style={styles.featureCard}>
-                <Ionicons name={feature.icon as any} size={32} color={feature.color} />
+                <Ionicons name={feature.icon as any} size={32} color={feature. color} />
                 <Text style={[styles.featureTitle, { color: colors.text }]}>{feature.title}</Text>
-                <Text style={[styles.featureSubtitle, { color: colors.textSecondary }]}>
-                  {feature.subtitle}
+                <Text style={[styles. featureSubtitle, { color: colors.textSecondary }]}>
+                  {feature. subtitle}
                 </Text>
               </Card>
             </Animated.View>
@@ -160,7 +158,7 @@ export default function GettingStarted() {
         </View>
 
         {/* WHY CHOOSE US */}
-        <Animated.View entering={FadeInDown.delay(600)} style={styles.benefitsSection}>
+        <Animated. View entering={FadeInDown. delay(600)} style={styles.benefitsSection}>
           <Text style={[styles.sectionHeader, { color: colors.text }]}>
             Why Choose GYM UDAAN?
           </Text>
@@ -182,15 +180,15 @@ export default function GettingStarted() {
               desc: "Certified professionals guiding your journey."
             }
           ].map((item, i) => (
-            <Animated.View key={i} entering={FadeInUp.delay(700 + i * 150)}>
+            <Animated.View key={i} entering={FadeInUp. delay(700 + i * 150)}>
               <Card elevated style={styles.benefitCard}>
-                <View style={styles.benefitRow}>
-                  <View style={[styles.benefitIcon, { backgroundColor: colors.highlight }]}>
+                <View style={styles. benefitRow}>
+                  <View style={[styles.benefitIcon, { backgroundColor: colors.primary }]}>
                     <Ionicons name={item.icon as any} size={24} color="#fff" />
                   </View>
 
                   <View style={styles.benefitText}>
-                    <Text style={[styles.benefitTitle, { color: colors.text }]}>{item.title}</Text>
+                    <Text style={[styles. benefitTitle, { color: colors.text }]}>{item.title}</Text>
                     <Text style={[styles.benefitDesc, { color: colors.textSecondary }]}>
                       {item.desc}
                     </Text>
@@ -205,7 +203,7 @@ export default function GettingStarted() {
 
       {/* BOTTOM ACTION BUTTON */}
       <Animated.View
-        entering={SlideInUp.duration(500)}
+        entering={SlideInUp. duration(500)}
         style={[styles.bottomSection, { backgroundColor: colors.background }]}
       >
         <Button
@@ -222,10 +220,10 @@ export default function GettingStarted() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex:  1 },
 
   scrollContent: {
-    paddingTop: 60,
+    paddingTop:  60,
     paddingHorizontal: 24,
     paddingBottom: 140
   },
@@ -260,7 +258,7 @@ const styles = StyleSheet.create({
   featuresContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 30
+    marginBottom:  30
   },
 
   featureCard: {
@@ -269,7 +267,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4
   },
 
-  featureTitle: {
+  featureTitle:  {
     fontSize: 26,
     fontWeight: "bold",
     marginTop: 10
@@ -287,7 +285,7 @@ const styles = StyleSheet.create({
   },
 
   benefitsSection: {
-    marginBottom: 20,
+    marginBottom:  20,
     gap: 12
   },
 
@@ -296,7 +294,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10
   },
 
-  benefitRow: {
+  benefitRow:  {
     flexDirection: "row",
     alignItems: "center"
   },
@@ -317,7 +315,7 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
 
-  benefitDesc: {
+  benefitDesc:  {
     fontSize: 13,
     marginTop: 3
   },
@@ -327,7 +325,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 24,
+    padding:  24,
     paddingBottom: 40
   },
 

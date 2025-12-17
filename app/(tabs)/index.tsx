@@ -1,12 +1,17 @@
 // app/(tabs)/index.tsx
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
-import { attendanceData, memberData, membershipHistory } from "@/data/members";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useMembershipStore } from "@/store/useMembershipStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
+ 
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { useEffect } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -26,69 +31,116 @@ const { width } = Dimensions.get("window");
 export default function Home() {
   const router = useRouter();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = Colors[colorScheme ??  "light"];
 
-  const member = memberData.data;
-  const activeMembership = membershipHistory.data.find(
-    (m) => m.memberShipStatus === "ACTIVE"
-  );
-  const recentAttendance = attendanceData.data.slice(0, 3);
+  // Stores
+  const appUser = useAuthStore. use.appUser();
+  const { notifications, unreadCount, isLoading, fetchAll } = useNotificationStore();
+  const { currentMembership, fetchCurrentMembership } = useMembershipStore();
+
+  useEffect(() => {
+    fetchAll();
+    fetchCurrentMembership();
+  }, []);
+
+  // Get recent 3 messages
+  const recentMessages = notifications.slice(0, 3);
 
   const quickActions = [
     {
       icon: "restaurant",
       title: "Diet Plan",
       color: "#10B981",
-      route: "/diet-plans",
+      route: "/(tabs)/diet-plans",
     },
     {
-      icon: "cart",
-      title: "Shop",
-      color: "#8B5CF6",
-      route: "/shop",
+      icon: "checkmark-circle",
+      title: "Check-in",
+      color: "#3B82F6",
+      route: "/(tabs)/attendance",
     },
   ];
+
+  const getMessageIcon = (type: string, isRead: boolean) => {
+    if (! isRead) return "mail-unread";
+    
+    switch (type) {
+      case "INFO":
+        return "information-circle";
+      case "WARNING":
+        return "warning";
+      case "ALERT":
+        return "alert-circle";
+      case "PROMOTION":
+        return "gift";
+      case "REMINDER":
+        return "time";
+      default:
+        return "mail-open";
+    }
+  };
+
+  const getMessageColor = (priority: string, isRead: boolean) => {
+    if (!  isRead) return colors.primary;
+    
+    switch (priority) {
+      case "HIGH":
+        return colors.error;
+      case "NORMAL":
+        return colors.info;
+      case "LOW":
+        return colors.textSecondary;
+      default: 
+        return colors.textSecondary;
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <Animated.View
-          entering={FadeInUp.springify()}
+          entering={FadeInUp. springify()}
           style={[styles.header, { backgroundColor: colors.card }]}
         >
           <View>
-            <Text style={[styles.greeting, { color: colors.textSecondary }]}>
+            <Text style={[styles.greeting, { color: colors. textSecondary }]}>
               Welcome back,
             </Text>
-            <Text style={[styles.userName, { color: colors.text }]}>
-              {member.fullName.split(" ")[0]}! 👋
+            <Text style={[styles.userName, { color: colors. text }]}>
+              {appUser?. fullName. split(" ")[0] || "Member"}!  👋
             </Text>
           </View>
           <TouchableOpacity
             style={[
               styles.notificationButton,
-              { backgroundColor: colors.backgroundSecondary },
+              { backgroundColor: colors. backgroundSecondary },
             ]}
-            onPress={() => router.push("/notifications")}
+            onPress={() => router.push("/(tabs)/message")}
           >
             <Ionicons name="notifications" size={24} color={colors.text} />
-            <View style={[styles.badge, { backgroundColor: colors.error }]} />
+            {unreadCount > 0 && (
+              <View style={[styles.badge, { backgroundColor: colors.error }]}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 9 ? "9+" :  unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </Animated.View>
 
         {/* Active Membership Card */}
-        {activeMembership && (
+        {currentMembership && (
           <AnimatedCard
             entering={FadeInDown.delay(100).springify()}
             gradient
             style={styles.membershipCard}
           >
             <View style={styles.membershipContent}>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex:  1 }}>
                 <Text style={styles.membershipLabel}>Active Membership</Text>
                 <Text style={styles.membershipPlan}>
-                  {activeMembership.planName}
+                  {currentMembership.planName}
                 </Text>
                 <View style={styles.expiryRow}>
                   <Ionicons
@@ -97,13 +149,13 @@ export default function Home() {
                     color="rgba(255,255,255,0.9)"
                   />
                   <Text style={styles.expiryText}>
-                    {activeMembership.remainingDays} days remaining
+                    {currentMembership.remainingDays} days remaining
                   </Text>
                 </View>
               </View>
               <TouchableOpacity
                 style={styles.renewButton}
-                onPress={() => router.push("/attendance")}
+                onPress={() => router.push("/(tabs)/profile")}
               >
                 <Text style={styles.renewText}>View Details</Text>
                 <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
@@ -117,36 +169,34 @@ export default function Home() {
           entering={FadeInDown.delay(200).springify()}
           style={styles.section}
         >
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          <Text style={[styles.sectionTitle, { color: colors. text }]}>
             Quick Actions
           </Text>
           <View style={styles.quickActionsGrid}>
-            {quickActions.map((action, index) => (
+            {quickActions. map((action, index) => (
               <Animated.View
                 key={index}
                 entering={FadeInRight.delay(250 + index * 50).springify()}
               >
                 <TouchableOpacity
-                  onPress={() =>
-                    action.route && router.push(action.route as any)
-                  }
+                  onPress={() => router.push(action.route as any)}
                   activeOpacity={0.7}
                 >
                   <Card elevated style={styles.actionCard}>
                     <View
                       style={[
                         styles.actionIcon,
-                        { backgroundColor: `${action.color}15` },
+                        { backgroundColor:  `${action.color}15` },
                       ]}
                     >
                       <Ionicons
                         name={action.icon as any}
                         size={24}
-                        color={action.color}
+                        color={action. color}
                       />
                     </View>
                     <Text style={[styles.actionTitle, { color: colors.text }]}>
-                      {action.title}
+                      {action. title}
                     </Text>
                   </Card>
                 </TouchableOpacity>
@@ -155,99 +205,148 @@ export default function Home() {
           </View>
         </Animated.View>
 
-        {/* Recent Activity */}
-        <Animated.View
+        {/* Recent Messages */}
+        <Animated. View
           entering={FadeInDown.delay(600).springify()}
           style={styles.section}
         >
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Recent Check-ins
+              Recent Messages
             </Text>
-            <TouchableOpacity onPress={() => router.push("/attendance")}>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/message")}>
               <Text style={[styles.viewAll, { color: colors.primary }]}>
                 View All
               </Text>
             </TouchableOpacity>
           </View>
 
-          {recentAttendance.map((record, index) => (
-            <AnimatedCard
-              key={record.id}
-              entering={FadeInDown.delay(650 + index * 50).springify()}
-              elevated
-              style={styles.activityCard}
-            >
-              <View style={styles.activityContent}>
-                <View
-                  style={[
-                    styles.activityDate,
-                    { backgroundColor: `${colors.primary}15` },
-                  ]}
+          {isLoading && notifications.length === 0 ? (
+            <Card elevated style={styles.loadingCard}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                Loading messages...
+              </Text>
+            </Card>
+          ) : recentMessages.length === 0 ? (
+            <Card elevated style={styles.emptyCard}>
+              <Ionicons
+                name="chatbubbles-outline"
+                size={40}
+                color={colors.textTertiary}
+              />
+              <Text style={[styles.emptyText, { color: colors. textSecondary }]}>
+                No messages yet
+              </Text>
+            </Card>
+          ) : (
+            recentMessages.map((message, index) => (
+              <AnimatedCard
+                key={message.id}
+                entering={FadeInDown.delay(650 + index * 50).springify()}
+                elevated
+                style={[
+                  styles.messageCard,
+                  ! message.isRead && {
+                    backgroundColor: `${colors.primary}05`,
+                    borderLeftWidth: 3,
+                    borderLeftColor:  colors.primary,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  onPress={() => router.push("/(tabs)/message")}
+                  activeOpacity={0.7}
                 >
-                  <Text style={[styles.activityDay, { color: colors.primary }]}>
-                    {new Date(record.date).getDate()}
-                  </Text>
-                  <Text
-                    style={[styles.activityMonth, { color: colors.primary }]}
-                  >
-                    {new Date(record.date).toLocaleDateString("en-US", {
-                      month: "short",
-                    })}
-                  </Text>
-                </View>
-
-                <View style={styles.activityDetails}>
-                  <Text style={[styles.activityTitle, { color: colors.text }]}>
-                    {new Date(record.date).toLocaleDateString("en-US", {
-                      weekday: "long",
-                    })}
-                  </Text>
-                  <View style={styles.activityTime}>
-                    <Ionicons
-                      name="time"
-                      size={14}
-                      color={colors.textSecondary}
-                    />
-                    <Text
+                  <View style={styles.messageContent}>
+                    <View
                       style={[
-                        styles.activityTimeText,
-                        { color: colors.textSecondary },
+                        styles.messageIcon,
+                        {
+                          backgroundColor: `${getMessageColor(
+                            message.priority,
+                            message.isRead
+                          )}15`,
+                        },
                       ]}
                     >
-                      {record.checkInTime} - {record.checkOutTime}
-                    </Text>
-                  </View>
-                </View>
+                      <Ionicons
+                        name={getMessageIcon(message. type, message.isRead) as any}
+                        size={24}
+                        color={getMessageColor(message.priority, message.isRead)}
+                      />
+                    </View>
 
-                <View
-                  style={[
-                    styles.shiftBadge,
-                    {
-                      backgroundColor:
-                        record.shiftType === "MORNING"
-                          ? `${colors.warning}20`
-                          : `${colors.info}20`,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.shiftText,
-                      {
-                        color:
-                          record.shiftType === "MORNING"
-                            ? colors.warning
-                            : colors.info,
-                      },
-                    ]}
-                  >
-                    {record.shiftType}
-                  </Text>
-                </View>
-              </View>
-            </AnimatedCard>
-          ))}
+                    <View style={styles. messageDetails}>
+                      <View style={styles.messageTitleRow}>
+                        <Text
+                          style={[
+                            styles.messageTitle,
+                            { color: colors.text },
+                            ! message.isRead && styles.unreadTitle,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {message.title}
+                        </Text>
+                        {!message.isRead && (
+                          <View
+                            style={[
+                              styles.unreadDot,
+                              { backgroundColor:  colors.primary },
+                            ]}
+                          />
+                        )}
+                      </View>
+
+                      <Text
+                        style={[
+                          styles.messageText,
+                          { color: colors.textSecondary },
+                        ]}
+                        numberOfLines={2}
+                      >
+                        {message.message}
+                      </Text>
+
+                      <View style={styles.messageFooter}>
+                        <Text
+                          style={[styles.messageTime, { color: colors.textTertiary }]}
+                        >
+                          {new Date(message.createdDate).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute:  "2-digit",
+                          })}
+                        </Text>
+
+                        {message.isHighPriority && (
+                          <View
+                            style={[
+                              styles.priorityBadge,
+                              { backgroundColor: `${colors.error}15` },
+                            ]}
+                          >
+                            <Ionicons name="alert-circle" size={12} color={colors.error} />
+                            <Text style={[styles.priorityText, { color: colors.error }]}>
+                              Urgent
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color={colors. textTertiary}
+                    />
+                  </View>
+                </TouchableOpacity>
+              </AnimatedCard>
+            ))
+          )}
         </Animated.View>
 
         {/* Motivation Card */}
@@ -262,16 +361,16 @@ export default function Home() {
             colors={[`${colors.primary}30`, `${colors.secondary}20`]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.motivationGradient}
+            style={styles. motivationGradient}
           >
             <Ionicons name="trophy" size={32} color={colors.primary} />
-            <Text style={[styles.motivationTitle, { color: colors.text }]}>
-              Keep Going! 💪
+            <Text style={[styles.motivationTitle, { color: colors. text }]}>
+              Keep Going!  💪
             </Text>
             <Text
               style={[styles.motivationText, { color: colors.textSecondary }]}
             >
-              You are doing great! Stay consistent and you will reach your
+              You are doing great!  Stay consistent and you will reach your
               goals.
             </Text>
           </LinearGradient>
@@ -298,11 +397,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  greeting: {
+  greeting:  {
     fontSize: 14,
     marginBottom: 4,
   },
-  userName: {
+  userName:  {
     fontSize: 24,
     fontWeight: "bold",
   },
@@ -316,13 +415,20 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    top:  6,
+    right: 6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
     borderColor: "#FFFFFF",
+  },
+  badgeText: {
+    fontSize:  10,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   membershipCard: {
     margin: 20,
@@ -344,20 +450,20 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 8,
   },
-  expiryRow: {
+  expiryRow:  {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
   expiryText: {
-    fontSize: 12,
+    fontSize:  12,
     color: "rgba(255,255,255,0.9)",
   },
   renewButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor:  "rgba(255,255,255,0.2)",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
@@ -367,13 +473,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
   },
-  section: {
+  section:  {
     paddingHorizontal: 20,
     marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent:  "space-between",
     alignItems: "center",
     marginBottom: 12,
   },
@@ -408,45 +514,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  statsRow: {
-    flexDirection: "row",
+  loadingCard: {
+    padding: 40,
+    alignItems: "center",
     gap: 12,
   },
-  statCard: {
-    flex: 1,
-    padding: 16,
+  loadingText: {
+    fontSize: 14,
+  },
+  emptyCard: {
+    padding: 40,
     alignItems: "center",
+    gap: 12,
   },
-  statIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
+  emptyText: {
+    fontSize: 14,
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  statSubtext: {
-    fontSize: 10,
-  },
-  activityCard: {
+  messageCard: {
     padding: 16,
     marginBottom: 12,
   },
-  activityContent: {
+  messageContent: {
     flexDirection: "row",
     alignItems: "center",
   },
-  activityDate: {
+  messageIcon: {
     width: 48,
     height: 48,
     borderRadius: 12,
@@ -454,36 +546,50 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  activityDay: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  activityMonth: {
-    fontSize: 10,
-    textTransform: "uppercase",
-  },
-  activityDetails: {
+  messageDetails: {
     flex: 1,
   },
-  activityTitle: {
-    fontSize: 15,
-    fontWeight: "600",
+  messageTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
   },
-  activityTime: {
+  messageTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+  },
+  unreadTitle: {
+    fontWeight: "700",
+  },
+  unreadDot: {
+    width:  8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  messageText: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  messageFooter: {
+    flexDirection:  "row",
+    alignItems:  "center",
+    justifyContent: "space-between",
+  },
+  messageTime:  {
+    fontSize: 11,
+  },
+  priorityBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
-  activityTimeText: {
-    fontSize: 12,
-  },
-  shiftBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  shiftText: {
+  priorityText: {
     fontSize: 10,
     fontWeight: "600",
   },

@@ -2,19 +2,21 @@
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useNotificationStore } from "@/store/useNotificationStore";
 import { Ionicons, Octicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
-import { Platform } from "react-native";
+import { Platform } from "react-native"; 
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors. primary,
         tabBarInactiveTintColor: colors.textTertiary,
         headerShown: false,
         tabBarButton: HapticTab,
@@ -27,7 +29,7 @@ export default function TabLayout() {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize:  11,
           fontWeight: "600",
         },
       }}
@@ -46,19 +48,32 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="message"
+        options={{
+          title: "Message",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "notifications" : "notifications-outline"}
+              size={24}
+              color={color}
+            />
+          ),
+          tabBarBadge: unreadCount > 0 ?  unreadCount : undefined,
+        }}
+      />
+      <Tabs.Screen
         name="diet-plans"
         options={{
           title: "Diet Plans",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "barbell" : "barbell-outline"}
+              name={focused ?  "restaurant" : "restaurant-outline"}
               size={24}
               color={color}
             />
           ),
         }}
       />
-     
       <Tabs.Screen
         name="attendance"
         options={{

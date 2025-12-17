@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
 import { balanceData, memberData, membershipHistory } from "@/data/members";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuth } from "@/store/useAuth";
+import { useAuth } from "@/store/useAuthStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
