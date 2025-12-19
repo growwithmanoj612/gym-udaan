@@ -8,6 +8,7 @@ import { toast } from '@/providers/toast-provider';
 export interface INotificationStore {
   // State
   notifications: INotificationDetails[];
+  dietPlans: INotificationDetails[];
   unreadNotifications: INotificationDetails[];
   unreadCount: number;
   isLoading: boolean;
@@ -17,13 +18,14 @@ export interface INotificationStore {
   fetchUnread: () => Promise<void>;
   markAsRead: (id:  number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
-  getUnreadCount: () => Promise<void>;
-  deleteNotification: (id: number) => Promise<void>;
+  getUnreadCount: () => Promise<void>; 
+  getDietPlansNoti: () => Promise<void>;
 }
 
 const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
   // State
   notifications: [],
+  dietPlans: [],
   unreadNotifications: [],
   unreadCount: 0,
   isLoading: false,
@@ -35,12 +37,12 @@ const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
       const response = await axios_auth.get(API_ENDPOINTS.notifications.getAll);
       
       if (response?.data && response?. status === 200) {
-        const notifications = response.data;
-        const unreadCount = notifications.filter((n:  INotificationDetails) => !n.isRead).length;
+        const notifications = response?.data?.data;
+        // const unreadCount = notifications.filter((n:  INotificationDetails) => !n.isRead).length;
         
         set({
           notifications,
-          unreadCount,
+          // unreadCount,
         });
       }
     } catch (error: any) {
@@ -63,8 +65,8 @@ const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
       
       if (response?.data && response?.status === 200) {
         set({
-          unreadNotifications:  response.data,
-          unreadCount: response.data.length,
+          unreadNotifications:  response?.data?.data,
+          // unreadCount: response?.data?.data.length,
         });
       }
     } catch (error: any) {
@@ -89,11 +91,13 @@ const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
           n.id === id ? { ...n, isRead: true } : n
         );
         
-        const unreadCount = updatedNotifications.filter((n) => !n.isRead).length;
+        // const unreadCount = updatedNotifications.filter((n) => !n.isRead).length;
         
+        //deduct 1 from unread count
         set({
           notifications: updatedNotifications,
-          unreadCount,
+          unreadCount: get().unreadCount - 1,
+          // unreadCount,
         });
       }
     } catch (error:  any) {
@@ -144,42 +148,27 @@ const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
       const response = await axios_auth.get(API_ENDPOINTS.notifications.getUnreadCount);
       
       if (response?.data && response?.status === 200) {
-        set({ unreadCount: response.data });
+        set({ unreadCount: response?.data?.data });
       }
     } catch (error: any) {
       console.error('Failed to fetch unread count:', error);
     }
   },
-
-  deleteNotification:  async (id: number) => {
+  getDietPlansNoti: async () => {
     try {
-      const response = await axios_auth.delete(API_ENDPOINTS.notifications.delete(id));
+      const response = await axios_auth.get(API_ENDPOINTS.notifications.getDietPlansNoti);
       
-      if (response?.status === 204 || response?.status === 200) {
-        const updatedNotifications = get().notifications.filter((n) => n.id !== id);
-        const unreadCount = updatedNotifications.filter((n) => !n.isRead).length;
-        
-        set({
-          notifications:  updatedNotifications,
-          unreadCount,
-        });
-        
-        toast.show({
-          type: 'success',
-          text1: 'Deleted',
-          text2: 'Notification deleted successfully',
-        });
+      if (response?.data && response?.status === 200) {
+        set({ dietPlans: response?.data?.data });
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to delete notification';
-      toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMessage,
-      });
-      throw error;
+      console.error('Failed to fetch diet plans notifications:', error);
     }
   },
+     
+ 
+
+   
 }));
 
 export const useNotificationStore = createSelectors(useNotificationStoreBase);

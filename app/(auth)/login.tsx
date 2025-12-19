@@ -44,10 +44,10 @@ export default function Login() {
       valid = false;
     }
 
-    if (!password || password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-      valid = false;
-    }
+    // if (!password || password.length < 6) {
+    //   newErrors.password = "Password must be at least 6 characters";
+    //   valid = false;
+    // }
 
     setErrors(newErrors);
     return valid;

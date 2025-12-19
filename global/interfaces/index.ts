@@ -6,7 +6,8 @@ import {
   AttendanceFrom,
   PaymentMode,
   Gender,
-  ShiftType 
+  ShiftType, 
+  MessageType
 } from '../enums';
 
 // ==================== COMMON ====================
@@ -160,9 +161,9 @@ export interface INotificationDetails {
   id: number;
   
   // Content
-  title: string;
+   
   message: string;
-  type: string; // INFO, WARNING, ALERT, PROMOTION, REMINDER
+  type: MessageType; // INFO, WARNING, ALERT, PROMOTION, REMINDER
   priority: string; // HIGH, NORMAL, LOW
   isRead:  boolean;
   
