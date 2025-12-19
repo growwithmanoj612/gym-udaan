@@ -4,15 +4,15 @@
     "slug": "gym-udaan",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/splash.png",
+    "icon": "./assets/icon.png",
     "scheme": "gymudaan",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.niroj.gymudaan"
     },
     "android": {
-      "googleServicesFile": "./assets/config/google-services.json",
       "package": "com.niroj.gymudaan",
       "adaptiveIcon": {
         "backgroundColor": "#000000",
@@ -25,24 +25,23 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/splash.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-router",
+      "expo-notifications",
       [
         "expo-splash-screen",
         {
           "image": "./assets/splash.png",
           "resizeMode": "contain",
-          "imageWidth": 100,
+          "backgroundColor": "#0000033",
           "ios": {
             "image": "./assets/splash.png",
-            "resizeMode": "contain",
-            "imageWidth": 100
+            "resizeMode": "contain"
           },
-          "backgroundColor": "#0000033",
           "dark": {
-            "image": "./assets/icon.png",
+            "image": "./assets/splash.png",
             "backgroundColor": "#000000"
           }
         }

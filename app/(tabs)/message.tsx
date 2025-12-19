@@ -1,13 +1,15 @@
 // app/(tabs)/messages.tsx
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
+import { INotificationDetails } from "@/global/interfaces";
 import { useColorScheme } from "@/hooks/use-color-scheme"; 
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -26,6 +28,26 @@ export default function Messages() {
 
   const { notifications, isLoading, fetchAll, markAsRead, markAllAsRead } =
     useNotificationStore();
+
+
+      // Modal state
+      const [selectedMessage, setSelectedMessage] =
+        useState<INotificationDetails | null>(null);
+      const [isModalVisible, setIsModalVisible] = useState(false);
+      const openMessageModal = (message: INotificationDetails) => {
+        setSelectedMessage(message);
+        setIsModalVisible(true);
+    
+       
+        if (!message.isRead) {
+          markAsRead(message.id);
+        }
+      };
+      const closeModal = () => {
+        setIsModalVisible(false);
+        setSelectedMessage(null);
+      };
+    
 
   useEffect(() => {
     fetchAll();
@@ -140,7 +162,7 @@ export default function Messages() {
                 ]}
               >
                 <TouchableOpacity
-                  onPress={() => handleMarkAsRead(notification.id)}
+                  onPress={() => openMessageModal(notification)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.notificationContent}>
@@ -171,7 +193,7 @@ export default function Messages() {
                           ]}
                           numberOfLines={1}
                         >
-                          {notification.title}
+                          {notification.type}
                         </Text>
                         {!notification.isRead && (
                           <View
@@ -232,8 +254,55 @@ export default function Messages() {
               </AnimatedCard>
             ))}
           </View>
+           {/* ================= MESSAGE MODAL ================= */}
+                <Modal
+                  visible={isModalVisible}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={closeModal}
+                >
+                  <View style={styles.modalOverlay}>
+                    <View
+                      style={[
+                        styles.modalContent,
+                        { backgroundColor: colors.card },
+                      ]}
+                    >
+                      <View style={styles.modalHeader}>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>
+                          {selectedMessage?.type.replaceAll("_", " ")}
+                        </Text>
+                        <TouchableOpacity onPress={closeModal}>
+                          <Ionicons name="close" size={24} color={colors.text} />
+                        </TouchableOpacity>
+                      </View>
+          
+                      <ScrollView>
+                        <Text
+                          style={[
+                            styles.modalMessage,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          {selectedMessage?.message}
+                        </Text>
+          
+                        <Text
+                          style={[
+                            styles.modalTime,
+                            { color: colors.textTertiary },
+                          ]}
+                        >
+                          {selectedMessage &&
+                            new Date(selectedMessage.createdDate).toLocaleString()}
+                        </Text>
+                      </ScrollView>
+                    </View>
+                  </View>
+                </Modal>
         </ScrollView>
       )}
+      
     </View>
   );
 }
@@ -346,4 +415,45 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
   },
+
+
+  // Add these styles for the Modal component to the existing `styles` object.
+modalOverlay: {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.5)", // Semi-transparent black background
+  justifyContent: "center",
+  alignItems: "center",
+},
+modalContent: {
+  width: "90%",
+  maxHeight: "80%",
+  borderRadius: 12,
+  padding: 20,
+  backgroundColor: "#FFFFFF", // Replace with colors.card if dynamic styling is necessary
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 10,
+  elevation: 5,
+},
+modalHeader: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 16,
+},
+modalTitle: {
+  fontSize: 18,
+  fontWeight: "bold",
+},
+modalMessage: {
+  fontSize: 14,
+  lineHeight: 22,
+  marginBottom: 16,
+},
+modalTime: {
+  fontSize: 12,
+  color: "gray", // Replace with `colors.textTertiary` if dynamic styling is necessary
+  marginTop: 8,
+},
 });

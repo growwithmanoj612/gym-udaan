@@ -1,9 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
-import { attendanceData } from "@/data/members";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAttendanceStore } from "@/store/useAttendanceStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -12,6 +13,8 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { IAttendanceDetails } from "@/global/interfaces";
 
 const AnimatedCard = Animated.createAnimatedComponent(Card);
 
@@ -20,10 +23,47 @@ export default function Attendance() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  const attendance = attendanceData.data;
+  // Zustand store hooks
+  const { search, attendances } = useAttendanceStore();
 
-  const getShiftColor = (shift: string) => {
-    switch (shift) {
+  // State for month selection
+  const [selectedYearMonth, setSelectedYearMonth] = useState(format(new Date(), "yyyy-MM")); // Defaults to current month
+
+  useEffect(() => {
+    // Fetch attendance data for the selected month
+    search(selectedYearMonth);
+  }, [selectedYearMonth]);
+  
+
+   // Helper function to calculate the number of days in a month
+  const getDaysInMonth = (month: string) => {
+    const date = parseISO(`${month}-01`); // Parse input month string like "2025-12"
+    const startDate = startOfMonth(date);
+    const endDate = endOfMonth(date);
+
+    return endDate.getDate(); // Total days in the month
+  };
+  // Calculate attendance stats
+  const calculateStats = (attendanceList: IAttendanceDetails[]) => {
+    const daysInMonth = getDaysInMonth(selectedYearMonth);
+    const presentDays = attendanceList.filter((a) => a.checkInTime).length;
+    const absentDays = daysInMonth - presentDays;
+    const attendancePercentage = (presentDays / daysInMonth) * 100;
+
+    return {
+      totalDays: daysInMonth,
+      presentDays,
+      absentDays,
+      attendancePercentage: isNaN(attendancePercentage) ? 0 : attendancePercentage.toFixed(2),
+    };
+  };
+
+  const stats = calculateStats(attendances);
+
+ 
+
+  const getShiftColor = (shiftType:any) => {
+    switch (shiftType) {
       case "MORNING":
         return "#F59E0B";
       case "EVENING":
@@ -32,7 +72,15 @@ export default function Attendance() {
         return colors.primary;
     }
   };
-
+  // Helper function to convert time to 12-hour format with AM/PM
+  const formatToStandardTime = (time: string | null) => {
+    if (!time) return "Not Available";
+    const [hour, minute] = time.split(":");
+    const hourInt = parseInt(hour, 10);
+    const standardHour = hourInt % 12 || 12; // Converts 13 -> 1, etc.; handles 12 as is
+    const amPm = hourInt >= 12 ? "PM" : "AM";
+    return `${standardHour}:${minute} ${amPm}`;
+  };
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
@@ -52,6 +100,39 @@ export default function Attendance() {
         <View style={{ width: 40 }} />
       </Animated.View>
 
+      {/* Month Selector */}
+      <View style={styles.monthSelectorContainer}>
+        <TouchableOpacity
+          onPress={() =>
+            setSelectedYearMonth(
+              format(
+                new Date(new Date(selectedYearMonth).setMonth(new Date(selectedYearMonth).getMonth() - 1)),
+                "yyyy-MM"
+              )
+            )
+          }
+          style={styles.arrowButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.selectedYearMonth, { color: colors.text }]}>
+          {format(new Date(`${selectedYearMonth}-01`), "MMMM yyyy")}
+        </Text>
+        <TouchableOpacity
+          onPress={() =>
+            setSelectedYearMonth(
+              format(
+                new Date(new Date(selectedYearMonth).setMonth(new Date(selectedYearMonth).getMonth() + 1)),
+                "yyyy-MM"
+              )
+            )
+          }
+          style={styles.arrowButton}
+        >
+          <Ionicons name="arrow-forward" size={24} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Stats Overview */}
         <Animated.View
@@ -62,20 +143,26 @@ export default function Attendance() {
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <Ionicons name="calendar" size={32} color="#FFFFFF" />
-                <Text style={styles.statValue}>{attendance.length}</Text>
+                <Text style={styles.statValue}>{stats.totalDays}</Text>
                 <Text style={styles.statLabel}>Total Days</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Ionicons name="time" size={32} color="#FFFFFF" />
-                <Text style={styles.statValue}>~2hrs</Text>
-                <Text style={styles.statLabel}>Avg Duration</Text>
+                <Ionicons name="checkmark-circle" size={32} color="#FFFFFF" />
+                <Text style={styles.statValue}>{stats.presentDays}</Text>
+                <Text style={styles.statLabel}>Present Days</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Ionicons name="flame" size={32} color="#FFFFFF" />
-                <Text style={styles.statValue}>100%</Text>
-                <Text style={styles.statLabel}>This Week</Text>
+                <Ionicons name="close-circle" size={32} color="#FFFFFF" />
+                <Text style={styles.statValue}>{stats.absentDays}</Text>
+                <Text style={styles.statLabel}>Absent Days</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Ionicons name="analytics-circle" size={32} color="#FFFFFF" />
+                <Text style={styles.statValue}>{stats.attendancePercentage}%</Text>
+                <Text style={styles.statLabel}>Attendance %</Text>
               </View>
             </View>
           </Card>
@@ -87,7 +174,7 @@ export default function Attendance() {
             Recent Check-ins
           </Text>
 
-          {attendance.map((record, index) => (
+          {attendances.map((record, index) => (
             <AnimatedCard
               key={record.id}
               entering={FadeInDown.delay(200 + index * 50).springify()}
@@ -97,44 +184,23 @@ export default function Attendance() {
               <View style={styles.dateSection}>
                 <View style={styles.dateIcon}>
                   <Text style={styles.dateDay}>
-                    {new Date(record.date).getDate()}
+                    {new Date(record?.createdDate?.split('T')[0])?.getDate()}
                   </Text>
                   <Text style={styles.dateMonth}>
-                    {new Date(record.date).toLocaleDateString("en-US", {
+                    {new Date(record?.createdDate?.split('T')[0])?.toLocaleDateString("en-US", {
                       month: "short",
                     })}
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.recordDate, { color: colors.text }]}>
-                    {new Date(record.date).toLocaleDateString("en-US", {
+                    {new Date(record?.createdDate?.split('T')[0])?.toLocaleDateString("en-US", {
                       weekday: "long",
                     })}
                   </Text>
-                  <Text
-                    style={[
-                      styles.recordNepDate,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    {record.nepaliDate}
-                  </Text>
+               
                 </View>
-                <View
-                  style={[
-                    styles.shiftBadge,
-                    { backgroundColor: `${getShiftColor(record.shiftType)}20` },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.shiftText,
-                      { color: getShiftColor(record.shiftType) },
-                    ]}
-                  >
-                    {record.shiftType}
-                  </Text>
-                </View>
+             
               </View>
 
               <View style={styles.timeRow}>
@@ -146,12 +212,15 @@ export default function Attendance() {
                     Check In
                   </Text>
                   <Text style={[styles.timeValue, { color: colors.text }]}>
-                    {record.checkInTime}
+
+  {formatToStandardTime(
+                      record?.checkInTime?.split("T")[1] || null
+                    )}
+
+                    
                   </Text>
                 </View>
-
                 <View style={styles.timeSeparator} />
-
                 <View style={styles.timeItem}>
                   <Ionicons name="log-out" size={16} color={colors.error} />
                   <Text
@@ -160,7 +229,9 @@ export default function Attendance() {
                     Check Out
                   </Text>
                   <Text style={[styles.timeValue, { color: colors.text }]}>
-                    {record.checkOutTime}
+                    {formatToStandardTime(
+                      record?.checkOutTime?.split("T")[1] || null
+                    )}
                   </Text>
                 </View>
               </View>
@@ -306,5 +377,19 @@ const styles = StyleSheet.create({
     height: 30,
     backgroundColor: "rgba(0,0,0,0.1)",
     marginHorizontal: 16,
+  },
+  monthSelectorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
+  },
+  arrowButton: {
+    padding: 10,
+  },
+  selectedYearMonth: {
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

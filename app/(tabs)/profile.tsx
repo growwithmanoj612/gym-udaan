@@ -1,60 +1,65 @@
-// app/(tabs)/profile.tsx
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
-import { balanceData, memberData, membershipHistory } from "@/data/members";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuth } from "@/store/useAuthStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useMembershipStore } from "@/store/useMembershipStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import React, { useState, useEffect, Fragment } from "react";
 import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
+  Modal,
 } from "react-native";
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  Layout,
-} from "react-native-reanimated";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import MembershipCard from "../component/membership-card";
 
 const AnimatedCard = Animated.createAnimatedComponent(Card);
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function Profile() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  const { logout } = useAuth();
+  const { logout, appUser, changePassword } = useAuthStore();
+  const { currentMembership, fetchAll, memberships } = useMembershipStore();
 
-  const member = memberData.data;
-  const activeMembership = membershipHistory.data.find(
-    (m) => m.memberShipStatus === "ACTIVE"
-  );
-  const balance = balanceData.data;
+  const [showHistory, setShowHistory] = useState(false); // Membership history toggle
+  const [showChangePassword, setShowChangePassword] = useState(false); // Change password modal toggle
+  const [oldPassword, setOldPassword] = useState(""); // Old password input
+  const [newPassword, setNewPassword] = useState(""); // New password input
+  const [isSubmitting, setIsSubmitting] = useState(false); // Track submission state
+
+  useEffect(() => {
+    if (showHistory) {
+      fetchAll(); // Fetch membership history if toggled
+    }
+  }, [showHistory]);
 
   const handleLogout = () => {
     logout();
     router.replace("/(auth)/login");
   };
 
-  const menuItems = [
-    {
-      icon: "time",
-      title: "Membership History",
-      subtitle: "View past memberships",
-      route: "/membership-history",
-      color: colors.primary,
-    },
-  ];
-
-  const stats = [
-    { label: "Weight", value: `${member.weight}kg`, icon: "barbell" },
-    { label: "Height", value: `${member.height}cm`, icon: "resize" },
-    { label: "Blood", value: member.bloodGroup || "N/A", icon: "water" },
-  ];
+  const handlePasswordChange = async () => {
+    if (!oldPassword || !newPassword) {
+      alert("Please fill in both current and new password.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await changePassword(oldPassword, newPassword); // Call the changePassword function
+      setShowChangePassword(false); // Close the modal after successful password change
+    } catch (error: any) {
+      console.error("Error changing password:", error?.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -66,205 +71,61 @@ export default function Profile() {
           style={styles.headerCard}
         >
           <View style={styles.profileHeader}>
-            <Animated.View
-              entering={FadeInUp.delay(200).springify()}
-              style={styles.avatarContainer}
-            >
+            <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
                 <Ionicons name="person" size={40} color="#FFFFFF" />
               </View>
-              <TouchableOpacity style={styles.editButton}>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => setShowChangePassword(true)}
+              >
                 <Ionicons name="pencil" size={16} color="#FFFFFF" />
               </TouchableOpacity>
-            </Animated.View>
-
-            <Animated.Text
-              entering={FadeInUp.delay(300).springify()}
-              style={styles.userName}
-            >
-              {member.fullName}
-            </Animated.Text>
-
-            <Animated.View
-              entering={FadeInUp.delay(400).springify()}
-              style={styles.memberInfo}
-            >
-              <View style={styles.infoItem}>
-                <Ionicons name="call" size={14} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.infoText}>{member.phone}</Text>
-              </View>
-              <View style={styles.infoItem}>
-                <Ionicons name="card" size={14} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.infoText}>#{member.cardNumber}</Text>
-              </View>
-            </Animated.View>
-
-            <Animated.View
-              entering={FadeInUp.delay(500).springify()}
-              style={styles.statsRow}
-            >
-              {stats.map((stat, index) => (
-                <View key={index} style={styles.statItem}>
-                  <Ionicons
-                    name={stat.icon as any}
-                    size={18}
-                    color="rgba(255,255,255,0.9)"
-                  />
-                  <Text style={styles.statValue}>{stat.value}</Text>
-                  <Text style={styles.statLabel}>{stat.label}</Text>
-                </View>
-              ))}
-            </Animated.View>
+            </View>
+            <Text style={styles.userName}>{appUser?.fullName}</Text>
+            <View style={styles.infoItem}>
+              <Ionicons name="call" size={14} color="rgba(255,255,255,0.9)" />
+              <Text style={styles.infoText}>{appUser?.phone}</Text>
+            </View>
           </View>
         </AnimatedCard>
 
-        {/* Membership Card */}
-        {activeMembership && (
-          <Animated.View
-            entering={FadeInDown.delay(300).springify()}
-            style={styles.section}
-          >
+        {/* Membership Section */}
+        {!showHistory && currentMembership && (
+          <>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Current Membership
             </Text>
-            <Card elevated style={styles.membershipCard}>
-              <View style={styles.membershipHeader}>
-                <View style={{ flex: 1 }}>
-                  <View style={styles.membershipBadge}>
-                    <Text style={styles.membershipBadgeText}>ACTIVE</Text>
-                  </View>
-                  <Text
-                    style={[styles.membershipTitle, { color: colors.text }]}
-                  >
-                    {activeMembership.planName}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.membershipDate,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Expires on {activeMembership.endDateEng}
-                  </Text>
-                </View>
-                <View style={styles.membershipPrice}>
-                  <Text style={[styles.daysLeft, { color: colors.primary }]}>
-                    {activeMembership.remainingDays}
-                  </Text>
-                  <Text
-                    style={[styles.daysLabel, { color: colors.textSecondary }]}
-                  >
-                    Days Left
-                  </Text>
-                </View>
-              </View>
-
-              <View
-                style={[styles.divider, { backgroundColor: colors.border }]}
-              />
-
-              <View style={styles.priceRow}>
-                <Text
-                  style={[styles.priceLabel, { color: colors.textSecondary }]}
-                >
-                  Membership Price
-                </Text>
-                <Text style={[styles.priceValue, { color: colors.text }]}>
-                  ₹{activeMembership.price}
-                </Text>
-              </View>
-
-              {activeMembership.facilities.length > 0 && (
-                <>
-                  <View
-                    style={[styles.divider, { backgroundColor: colors.border }]}
-                  />
-                  <Text
-                    style={[
-                      styles.facilitiesTitle,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Facilities Included
-                  </Text>
-                  {activeMembership.facilities.map((facility, index) => (
-                    <View key={index} style={styles.facilityItem}>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={16}
-                        color={colors.success}
-                      />
-                      <Text
-                        style={[styles.facilityText, { color: colors.text }]}
-                      >
-                        {facility.facilityName}
-                      </Text>
-                    </View>
-                  ))}
-                </>
-              )}
-            </Card>
-          </Animated.View>
+            <MembershipCard membership={currentMembership} />
+          </>
         )}
 
-        {/* Menu Items */}
+        {/* View Membership History Button */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Quick Actions
-          </Text>
-          {menuItems.map((item, index) => (
-            <AnimatedTouchable
-              key={index}
-              entering={FadeInDown.delay(400 + index * 50).springify()}
-              layout={Layout.springify()}
-              onPress={() => {
-                // Handle navigation
-              }}
-              activeOpacity={0.7}
-            >
-              <Card elevated style={styles.menuCard}>
-                <View style={styles.menuRow}>
-                  <View
-                    style={[
-                      styles.menuIcon,
-                      { backgroundColor: `${item.color}15` },
-                    ]}
-                  >
-                    <Ionicons
-                      name={item.icon as any}
-                      size={24}
-                      color={item.color}
-                    />
-                  </View>
-                  <View style={styles.menuText}>
-                    <Text style={[styles.menuTitle, { color: colors.text }]}>
-                      {item.title}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.menuSubtitle,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      {item.subtitle}
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={colors.textTertiary}
-                  />
-                </View>
-              </Card>
-            </AnimatedTouchable>
-          ))}
+          <Button
+            title={showHistory ? "Hide History" : "View Membership History"}
+            onPress={() => setShowHistory(!showHistory)}
+            variant="primary"
+            size="large"
+            style={[
+              styles.toggleHistoryButton,
+              { backgroundColor: colors.primary },
+            ]}
+            textStyle={{ color: "#FFFFFF" }}
+          />
         </View>
 
+        {/* Membership History List */}
+        {showHistory &&
+          memberships?.length > 0 &&
+          memberships.map((membership) => (
+            <Fragment key={membership.id}>
+              <MembershipCard membership={membership} />
+            </Fragment>
+          ))}
+
         {/* Logout Button */}
-        <Animated.View
-          entering={FadeInDown.delay(900).springify()}
-          style={styles.logoutSection}
-        >
+        <View style={styles.logoutSection}>
           <Button
             title="Logout"
             onPress={handleLogout}
@@ -273,8 +134,76 @@ export default function Profile() {
             style={[styles.logoutButton, { borderColor: colors.error }]}
             textStyle={{ color: colors.error }}
           />
-        </Animated.View>
+        </View>
       </ScrollView>
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={showChangePassword}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowChangePassword(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+          <Text
+            style={[styles.modalTitle, { color: colors.text }]}
+          >
+            Change Password
+          </Text>
+          <TextInput
+            secureTextEntry
+            placeholder="Current Password"
+            placeholderTextColor={colors.textSecondary}
+            value={oldPassword}
+            onChangeText={setOldPassword}
+            style={[
+              styles.input,
+              { borderColor: colors.textSecondary, color: colors.text },
+            ]}
+          />
+          <TextInput
+            secureTextEntry
+            placeholder="New Password"
+            placeholderTextColor={colors.textSecondary}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            style={[
+              styles.input,
+              { borderColor: colors.textSecondary, color: colors.text },
+            ]}
+          />
+          <View style={styles.actionRow}>
+            <Button
+              title="Cancel"
+              onPress={() => setShowChangePassword(false)}
+              variant="outline"
+              size="large"
+              style={[
+                styles.cancelButton,
+                { borderColor: colors.textSecondary },
+              ]}
+              textStyle={{
+                color: colors.textSecondary,
+              }}
+            />
+            <Button
+              title={isSubmitting ? "Changing..." : "Confirm"}
+              onPress={handlePasswordChange}
+              disabled={isSubmitting}
+              variant="primary"
+              size="large"
+              style={{
+                backgroundColor: isSubmitting
+                  ? colors.textSecondary
+                  : colors.primary,
+              }}
+              textStyle={{
+                color: "#FFFFFF",
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -320,37 +249,15 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 8,
   },
-  memberInfo: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 20,
-  },
   infoItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    marginBottom: 10, // Added for proper spacing
   },
   infoText: {
     fontSize: 12,
     color: "rgba(255,255,255,0.9)",
-  },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
-  },
-  statItem: {
-    alignItems: "center",
-    gap: 4,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
-  statLabel: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.8)",
   },
   section: {
     paddingHorizontal: 20,
@@ -361,100 +268,50 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 12,
   },
-  membershipCard: {
-    padding: 20,
+  changePasswordCard: {
+    padding: 16,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF", // Ensures contrast with text
+    elevation: 3, // Adds shadow effect
   },
-  membershipHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
     marginBottom: 16,
   },
-  membershipBadge: {
-    backgroundColor: "#10B981",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-    marginBottom: 8,
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Background overlay with transparency
+    paddingHorizontal: 20,
   },
-  membershipBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
+  modalTitle: {
+    fontSize: 22, // Slightly larger title font
     fontWeight: "bold",
+    marginBottom: 24,
+    textAlign: "center",
+    color: "#FFFFFF", // Ensures visibility on dark backgrounds
   },
-  membershipTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  membershipDate: {
-    fontSize: 13,
-  },
-  membershipPrice: {
-    alignItems: "flex-end",
-  },
-  daysLeft: {
-    fontSize: 32,
-    fontWeight: "bold",
-  },
-  daysLabel: {
-    fontSize: 12,
-  },
-  divider: {
-    height: 1,
-    marginVertical: 16,
-  },
-  priceRow: {
+  actionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    width: "100%", // Ensures buttons align properly
   },
-  priceLabel: {
-    fontSize: 14,
+  toggleHistoryButton: {
+    paddingVertical: 10,
+    borderRadius: 6,
+    marginBottom: 16,
+    elevation: 2, // Adds slight shadow effect on the button
   },
-  priceValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  facilitiesTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  facilityItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
-  },
-  facilityText: {
-    fontSize: 14,
-  },
-  menuCard: {
-    marginBottom: 12,
-    padding: 16,
-  },
-  menuRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  menuIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  menuText: {
+  cancelButton: {
+    borderWidth: 2,
     flex: 1,
-  },
-  menuTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  menuSubtitle: {
-    fontSize: 13,
+    marginRight: 8,
+    borderRadius: 8, // Rounded corners for consistent design
   },
   logoutSection: {
     paddingHorizontal: 20,
@@ -462,5 +319,6 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     borderWidth: 2,
+    borderRadius: 8,
   },
 });

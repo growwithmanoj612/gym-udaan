@@ -38,21 +38,18 @@ export const API_ENDPOINTS = {
     getAll: `${notificationBase}/get-all`,
     getUnread: `${notificationBase}/get-unread`,
     getById: (id: number) => `${notificationBase}/${id}`,
-    markAsRead: (id: number) => `${notificationBase}/${id}/mark-read`,
-    markAllAsRead: `${notificationBase}/mark-all-read`,
-    getUnreadCount: `${notificationBase}/unread-count`,
-    delete: (id: number) => `${notificationBase}/${id}`,
+    markAsRead: (id: number) => `${notificationBase}/mark-as-read?id=${id}`,
+    markAllAsRead: `${notificationBase}/mark-all-as-read`,
+    getUnreadCount: `${notificationBase}/get-unread-count`,
+    getDietPlansNoti: `${notificationBase}/get-diet-plans-noti`,
+
   },
 
   attendance: {
-    getAll: `${attendanceBase}/get-all`,
-    checkIn: `${attendanceBase}/check-in`,
-    checkOut: `${attendanceBase}/check-out`,
-    getHistory: `${attendanceBase}/history`,
-    getTodayAttendance: `${attendanceBase}/today`,
-    getStats: `${attendanceBase}/stats`,
+    search: (yearMonth: string) => `${attendanceBase}/search?yearMonth=${yearMonth}`,
+    
     getByDateRange: (startDate: string, endDate: string) => 
-      `${attendanceBase}/range? startDate=${startDate}&endDate=${endDate}`,
+      `${attendanceBase}/range?startDate=${startDate}&endDate=${endDate}`,
   },
 
   membership: {

@@ -74,6 +74,38 @@ const useAuthStoreBase = create<IAuthStore>((set, get) => ({
       set({ isLoading: false });
     }
   },
+   changePassword: async ( oldPassword: string,newPassword: string) => {
+    try {
+      const res = await axios_auth.post(
+        `auth/change-password`,
+        { oldPassword, newPassword }
+      );
+
+      if(res?.data?.status === 200){
+
+  toast.show({
+        type:  'success' ,
+        text1:  res?.data?.message,
+        text2: 'Your password has been changed successfully.',
+      });
+return
+      }
+      toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to change password.',
+      });
+
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+      toast.show({
+        type: 'error',
+        text1: 'Login Failed',
+        text2: errorMessage,
+      });
+    }
+      
+  },
 
   logout: async () => {
     set({ isLoading: true });

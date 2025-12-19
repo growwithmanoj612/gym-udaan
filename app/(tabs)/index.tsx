@@ -1,6 +1,7 @@
 // app/(tabs)/index.tsx
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
+import { INotificationDetails } from "@/global/interfaces";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useMembershipStore } from "@/store/useMembershipStore";
@@ -9,10 +10,11 @@ import { useNotificationStore } from "@/store/useNotificationStore";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -35,12 +37,32 @@ export default function Home() {
 
   // Stores
   const appUser = useAuthStore. use.appUser();
-  const { notifications, unreadCount, isLoading, fetchAll } = useNotificationStore();
+  const { notifications, unreadCount, isLoading, fetchAll,getUnreadCount } = useNotificationStore();
   const { currentMembership, fetchCurrentMembership } = useMembershipStore();
+
+  // Modal state
+  const [selectedMessage, setSelectedMessage] =
+    useState<INotificationDetails | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const openMessageModal = (message: INotificationDetails) => {
+    setSelectedMessage(message);
+    setIsModalVisible(true);
+
+    // Optional: mark as read
+    // if (!message.isRead) {
+    //   markAsRead(message.id);
+    // }
+  };
+  const closeModal = () => {
+    setIsModalVisible(false);
+    setSelectedMessage(null);
+  };
+
 
   useEffect(() => {
     fetchAll();
     fetchCurrentMembership();
+    getUnreadCount();
   }, []);
 
   // Get recent 3 messages
@@ -138,7 +160,7 @@ export default function Home() {
           >
             <View style={styles.membershipContent}>
               <View style={{ flex:  1 }}>
-                <Text style={styles.membershipLabel}>Active Membership</Text>
+                <Text style={styles.membershipLabel}>{currentMembership?.memberShipStatus} Membership</Text>
                 <Text style={styles.membershipPlan}>
                   {currentMembership.planName}
                 </Text>
@@ -242,20 +264,21 @@ export default function Home() {
           ) : (
             recentMessages.map((message, index) => (
               <AnimatedCard
-                key={message.id}
+                key={message?.id}
                 entering={FadeInDown.delay(650 + index * 50).springify()}
                 elevated
                 style={[
                   styles.messageCard,
-                  ! message.isRead && {
+                  ! message?.isRead && {
                     backgroundColor: `${colors.primary}05`,
                     borderLeftWidth: 3,
                     borderLeftColor:  colors.primary,
                   },
                 ]}
               >
-                <TouchableOpacity
-                  onPress={() => router.push("/(tabs)/message")}
+                  <TouchableOpacity
+                  onPress={() => openMessageModal(message)}
+
                   activeOpacity={0.7}
                 >
                   <View style={styles.messageContent}>
@@ -264,16 +287,16 @@ export default function Home() {
                         styles.messageIcon,
                         {
                           backgroundColor: `${getMessageColor(
-                            message.priority,
-                            message.isRead
+                            message?.priority,
+                            message?.isRead
                           )}15`,
                         },
                       ]}
                     >
                       <Ionicons
-                        name={getMessageIcon(message. type, message.isRead) as any}
+                        name={getMessageIcon(message?. type, message?.isRead) as any}
                         size={24}
-                        color={getMessageColor(message.priority, message.isRead)}
+                        color={getMessageColor(message?.priority, message?.isRead)}
                       />
                     </View>
 
@@ -283,13 +306,13 @@ export default function Home() {
                           style={[
                             styles.messageTitle,
                             { color: colors.text },
-                            ! message.isRead && styles.unreadTitle,
+                            ! message?.isRead && styles.unreadTitle,
                           ]}
                           numberOfLines={1}
                         >
-                          {message.title}
+                          {message?.type}
                         </Text>
-                        {!message.isRead && (
+                        {!message?.isRead && (
                           <View
                             style={[
                               styles.unreadDot,
@@ -306,14 +329,14 @@ export default function Home() {
                         ]}
                         numberOfLines={2}
                       >
-                        {message.message}
+                        {message?.message}
                       </Text>
 
                       <View style={styles.messageFooter}>
                         <Text
                           style={[styles.messageTime, { color: colors.textTertiary }]}
                         >
-                          {new Date(message.createdDate).toLocaleString("en-US", {
+                          {new Date(message?.createdDate).toLocaleString("en-US", {
                             month: "short",
                             day: "numeric",
                             hour: "2-digit",
@@ -321,7 +344,7 @@ export default function Home() {
                           })}
                         </Text>
 
-                        {message.isHighPriority && (
+                        {message?.isHighPriority && (
                           <View
                             style={[
                               styles.priorityBadge,
@@ -376,6 +399,52 @@ export default function Home() {
           </LinearGradient>
         </AnimatedCard>
       </ScrollView>
+      {/* ================= MESSAGE MODAL ================= */}
+      <Modal
+        visible={isModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: colors.card },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                {selectedMessage?.type.replaceAll("_", " ")}
+              </Text>
+              <TouchableOpacity onPress={closeModal}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView>
+              <Text
+                style={[
+                  styles.modalMessage,
+                  { color: colors.textSecondary },
+                ]}
+              >
+                {selectedMessage?.message}
+              </Text>
+
+              <Text
+                style={[
+                  styles.modalTime,
+                  { color: colors.textTertiary },
+                ]}
+              >
+                {selectedMessage &&
+                  new Date(selectedMessage.createdDate).toLocaleString()}
+              </Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -614,4 +683,45 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
+
+
+  // Add these styles for the Modal component to the existing `styles` object.
+modalOverlay: {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.5)", // Semi-transparent black background
+  justifyContent: "center",
+  alignItems: "center",
+},
+modalContent: {
+  width: "90%",
+  maxHeight: "80%",
+  borderRadius: 12,
+  padding: 20,
+  backgroundColor: "#FFFFFF", // Replace with colors.card if dynamic styling is necessary
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 10,
+  elevation: 5,
+},
+modalHeader: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 16,
+},
+modalTitle: {
+  fontSize: 18,
+  fontWeight: "bold",
+},
+modalMessage: {
+  fontSize: 14,
+  lineHeight: 22,
+  marginBottom: 16,
+},
+modalTime: {
+  fontSize: 12,
+  color: "gray", // Replace with `colors.textTertiary` if dynamic styling is necessary
+  marginTop: 8,
+},
 });

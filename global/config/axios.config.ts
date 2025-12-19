@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.16.101:9003/api/v1';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.16.102:9003/api/v1';
 const API_TIMEOUT = 30000;
 
 // Token storage keys

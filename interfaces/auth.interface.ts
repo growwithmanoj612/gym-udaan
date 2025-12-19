@@ -14,6 +14,7 @@ export interface IAuthStore {
   clearAppUser: () => void;
   login: (credentials: ILoginRequest) => Promise<void>;
   logout: () => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>
   checkAuth: () => Promise<void>;
   completeOnboarding: () => void;
   selectTenant: (tenantId:  string) => void;
