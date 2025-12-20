@@ -2,8 +2,8 @@ import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.16.102:9003/api/v1';
+// http://192.168.16.102
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.254.9:9003/api/v1';
 const API_TIMEOUT = 30000;
 
 // Token storage keys
@@ -11,7 +11,7 @@ const ACCESS_TOKEN_KEY = '@gym_udaan_access_token';
 const REFRESH_TOKEN_KEY = '@gym_udaan_refresh_token';
 
 // Token management utilities
-export const tokenManager = {
+export const tokenManager = { 
   async setAccessToken(token: string): Promise<void> {
     await AsyncStorage.setItem(ACCESS_TOKEN_KEY, token);
   },
