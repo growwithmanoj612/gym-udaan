@@ -29,8 +29,8 @@
       "favicon": "./assets/icon.png"
     },
     "plugins": [
-      "@react-native-firebase/app",
-      "@react-native-firebase/messaging",
+      // "@react-native-firebase/app",
+      // "@react-native-firebase/messaging",
       "expo-notifications",
       "expo-router",
       "expo-font",
