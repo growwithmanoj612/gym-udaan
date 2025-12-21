@@ -1,3 +1,4 @@
+import { registerForPushNotificationsAsync } from "@/components/notification/notifications";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ToastProvider } from "@/providers/toast-provider";
 import {
@@ -5,72 +6,50 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Slot } from "expo-router";
+import * as Notifications from "expo-notifications";
+import { Slot, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-// import messaging from '@react-native-firebase/messaging';
+import { useEffect, useRef } from "react";
+
+type NotificationData = {
+  route?: string;
+};
 
 export default function RootLayout() {
-  // const requestUserPermission = async (): Promise<boolean> => {
-  //   const authStatus = await messaging().requestPermission();
-
-  //   const enabled =
-  //     authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-  //     authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-  //   if (enabled) {
-  //     console.log("Authorization status:", authStatus);
-  //   }
-
-  //   return enabled;
-  // };
-
   const colorScheme = useColorScheme();
+  const router = useRouter();
 
-  // useEffect(() => {
-  //   const initFCM = async () => {
-  //     const hasPermission = await requestUserPermission();
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
-  //     if (hasPermission) {
-  //       const token = await messaging().getToken();
-  //       console.log("FCM Token:", token);
-  //     } else {
-  //       console.log("Notification permission not granted");
-  //     }
-  //   };
+  useEffect(() => {
+    // Register push token
+    registerForPushNotificationsAsync();
 
-  //   initFCM();
+    // Foreground notifications
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener((notification) => {
+        console.log("Foreground notification:", notification);
+      });
 
-  //   // ---- listeners ----
-  //   messaging()
-  //     .getInitialNotification()
-  //     .then((remoteMessage) => {
-  //       if (remoteMessage) {
-  //         console.log(
-  //           "Notification caused app to open from quit state:",
-  //           remoteMessage.notification
-  //         );
-  //       }
-  //     });
+    // User taps notification
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content
+          .data as NotificationData;
 
-  //   const unsubscribeOpen = messaging().onNotificationOpenedApp(
-  //     (remoteMessage) => {
-  //       console.log(
-  //         "Notification caused app to open from background state:",
-  //         remoteMessage.notification
-  //       );
-  //     }
-  //   );
+        console.log("Notification tapped:", data);
 
-  //   const unsubscribeMessage = messaging().onMessage(async (remoteMessage) => {
-  //     Alert.alert("A new FCM message arrived!", JSON.stringify(remoteMessage));
-  //     console.log("A new FCM message arrived!", remoteMessage);
-  //   });
+        if (data.route && typeof data.route === "string") {
+          router.push(data.route as any);
+        }
+      });
 
-  //   return () => {
-  //     unsubscribeOpen();
-  //     unsubscribeMessage();
-  //   };
-  // }, []);
+    return () => {
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
+    };
+  }, [router]);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
