@@ -68,6 +68,7 @@ export default function Login() {
         userName: phoneNumber,
         password,
         businessDetailsId: parseInt(selectedTenantId),
+        expoToken: await AsyncStorage.getItem("expoPushToken") || "",
       });
       console.log("Login successful");
       // Navigation is handled by root layout based on auth state
