@@ -1,54 +1,38 @@
-import { registerForPushNotificationsAsync } from "@/components/notification/notifications";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { ToastProvider } from "@/providers/toast-provider";
+import { useEffect } from "react";
+import { Slot, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import * as Notifications from "expo-notifications";
-import { Slot, useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef } from "react";
+import { OneSignal, LogLevel } from "react-native-onesignal";
 
-type NotificationData = {
-  route?: string;
-};
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ToastProvider } from "@/providers/toast-provider";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
 
-  const notificationListener = useRef<Notifications.Subscription | null>(null);
-  const responseListener = useRef<Notifications.Subscription | null>(null);
-
   useEffect(() => {
-    // Register push token
-    registerForPushNotificationsAsync();
+    // 🔹 OneSignal debug logs (remove in production)
+    OneSignal.Debug.setLogLevel(LogLevel.Verbose);
 
-    // Foreground notifications
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
-        console.log("Foreground notification:", notification);
-      });
+    // 🔹 Initialize OneSignal
+    OneSignal.initialize("62593ae1-e19c-4b19-895c-fd5a086ccb39");
 
-    // User taps notification
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        const data = response.notification.request.content
-          .data as NotificationData;
+    // 🔹 Request permission
+    OneSignal.Notifications.requestPermission(false);
 
-        console.log("Notification tapped:", data);
+    // 🔹 Handle notification click
+    OneSignal.Notifications.addEventListener("click", (event:any) => {
+      const route = event.notification.additionalData?.route;
 
-        if (data.route && typeof data.route === "string") {
-          router.push(data.route as any);
-        }
-      });
-
-    return () => {
-      notificationListener.current?.remove();
-      responseListener.current?.remove();
-    };
+      if (typeof route === "string") {
+        router.push(route as any);
+      }
+    });
   }, [router]);
 
   return (
