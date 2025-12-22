@@ -2,7 +2,7 @@
 import { Colors } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { LinearGradient } from "expo-linear-gradient";
-import { StyleSheet, View, ViewStyle, StyleProp } from "react-native";
+import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
 interface CardProps {
   children: React.ReactNode;
