@@ -6,6 +6,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useMembershipStore } from "@/store/useMembershipStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import { useNotificationStoreOwner } from "@/store/useNotificationStoreForOwner";
  
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -37,8 +38,8 @@ export default function Home() {
 
   // Stores
   const appUser = useAuthStore. use.appUser();
-  const { notifications, unreadCount, isLoading, fetchPaginated,getUnreadCount } = useNotificationStore();
-  const { currentMembership, fetchCurrentMembership } = useMembershipStore();
+  const { notifications, unreadCount, isLoading, fetchPaginated,getUnreadCount } = useNotificationStoreOwner();
+ 
 
   // Modal state
   const [selectedMessage, setSelectedMessage] =
@@ -61,27 +62,14 @@ export default function Home() {
 
   useEffect(() => {
     fetchPaginated();
-    fetchCurrentMembership();
+    
     getUnreadCount();
   }, []);
 
   // Get recent 3 messages
   const recentMessages = notifications.slice(0, 3);
 
-  const quickActions = [
-    {
-      icon: "restaurant",
-      title: "Diet Plan",
-      color: "#10B981",
-      route: "/(tabs)/diet-plans",
-    },
-    {
-      icon: "checkmark-circle",
-      title: "Check-in",
-      color: "#3B82F6",
-      route: "/(tabs)/attendance",
-    },
-  ];
+ 
 
   const getMessageIcon = (type: string, isRead: boolean) => {
     if (! isRead) return "mail-unread";
@@ -151,81 +139,9 @@ export default function Home() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Active Membership Card */}
-        {currentMembership && (
-          <AnimatedCard
-            entering={FadeInDown.delay(100).springify()}
-            gradient
-            style={styles.membershipCard}
-          >
-            <View style={styles.membershipContent}>
-              <View style={{ flex:  1 }}>
-                <Text style={styles.membershipLabel}>{currentMembership?.memberShipStatus} Membership</Text>
-                <Text style={styles.membershipPlan}>
-                  {currentMembership.planName}
-                </Text>
-                <View style={styles.expiryRow}>
-                  <Ionicons
-                    name="time"
-                    size={14}
-                    color="rgba(255,255,255,0.9)"
-                  />
-                  <Text style={styles.expiryText}>
-                    {currentMembership.remainingDays} days remaining
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={styles.renewButton}
-                onPress={() => router.push("/(tabs)/profile")}
-              >
-                <Text style={styles.renewText}>View Details</Text>
-                <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          </AnimatedCard>
-        )}
+       
 
-        {/* Quick Actions */}
-        <Animated.View
-          entering={FadeInDown.delay(200).springify()}
-          style={styles.section}
-        >
-          <Text style={[styles.sectionTitle, { color: colors. text }]}>
-            Quick Actions
-          </Text>
-          <View style={styles.quickActionsGrid}>
-            {quickActions. map((action, index) => (
-              <Animated.View
-                key={index}
-                entering={FadeInRight.delay(250 + index * 50).springify()}
-              >
-                <TouchableOpacity
-                  onPress={() => router.push(action.route as any)}
-                  activeOpacity={0.7}
-                >
-                  <Card elevated style={styles.actionCard}>
-                    <View
-                      style={[
-                        styles.actionIcon,
-                        { backgroundColor:  `${action.color}15` },
-                      ]}
-                    >
-                      <Ionicons
-                        name={action.icon as any}
-                        size={24}
-                        color={action. color}
-                      />
-                    </View>
-                    <Text style={[styles.actionTitle, { color: colors.text }]}>
-                      {action. title}
-                    </Text>
-                  </Card>
-                </TouchableOpacity>
-              </Animated.View>
-            ))}
-          </View>
-        </Animated.View>
+       
 
         {/* Recent Messages */}
         <Animated. View
@@ -393,8 +309,7 @@ export default function Home() {
             <Text
               style={[styles.motivationText, { color: colors.textSecondary }]}
             >
-              You are doing great!  Stay consistent and you will reach your
-              goals.
+             Manage Your Business with ease
             </Text>
           </LinearGradient>
         </AnimatedCard>

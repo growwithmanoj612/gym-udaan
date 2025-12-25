@@ -59,9 +59,12 @@ const useAuthStoreBase = create<IAuthStore>((set, get) => ({
         toast.show({
           type: 'success',
           text1: 'Login Successful',
-          text2: `Welcome back, ${appUser.fullName}!`,
+          text2: `Welcome back, ${appUser?.fullName}!`,
         });
+
+        return appUser?.appUserRole;
       }
+      return null;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
       toast.show({
@@ -69,7 +72,7 @@ const useAuthStoreBase = create<IAuthStore>((set, get) => ({
         text1: 'Login Failed',
         text2: errorMessage,
       });
-      throw error;
+     return null;
     } finally {
       set({ isLoading: false });
     }

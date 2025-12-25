@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Colors } from "@/constants/color";
+import { AppUserRoles } from "@/global/enums";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { TENANT_KEY, useAuthStore } from "@/store/useAuthStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,7 +24,7 @@ export default function Login() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  
+
   // ✅ Zustand store with standard selectors
   const login = useAuthStore((state) => state.login);
   const isLoading = useAuthStore((state) => state.isLoading);
@@ -64,15 +65,33 @@ export default function Login() {
     }
 
     try {
-      await login({
+      const role = await login({
         userName: phoneNumber,
         password,
-        businessDetailsId: parseInt(selectedTenantId),
-        expoToken: await AsyncStorage.getItem("expoPushToken") || "",
+        businessDetailsId: parseInt(selectedTenantId)
       });
-      console.log("Login successful");
-      // Navigation is handled by root layout based on auth state
-      router.replace("/(tabs)");
+
+      if (role) {
+        console.log("Login successful");
+        // Navigation is handled by root layout based on auth state
+
+        console.log("appuser role in login is " + role)
+        if (role === AppUserRoles.ROLE_MEMBER) {
+          router.replace("/(tabs)");
+        } else if (role === AppUserRoles.ROLE_ADMIN) {
+          router.replace("/(admin)");
+        }
+        else {
+          // Fallback: default to member if role is unknown
+          router.replace("/(tabs)");
+        }
+
+
+
+
+      }
+
+
     } catch (error) {
       // Error is already handled by store with toast
       console.error("Login error:", error);
@@ -102,7 +121,7 @@ export default function Login() {
           <LinearGradient
             colors={[colors.gradientStart, colors.gradientEnd]}
             style={styles.logoCircle}
-            start={{ x:  0, y: 0 }}
+            start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <Ionicons name="barbell" size={40} color="#FFFFFF" />
@@ -177,11 +196,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingTop: 60,
     paddingHorizontal: 24,
-    paddingBottom:  40,
+    paddingBottom: 40,
   },
   header: {
-    alignItems:  "center",
-    marginBottom:  40,
+    alignItems: "center",
+    marginBottom: 40,
   },
   logoCircle: {
     width: 80,
@@ -196,7 +215,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 8,
   },
-  subtitle:  {
+  subtitle: {
     fontSize: 14,
     textAlign: "center",
   },
@@ -209,7 +228,7 @@ const styles = StyleSheet.create({
     marginTop: -8,
   },
   forgotPasswordText: {
-    fontSize:  14,
+    fontSize: 14,
     fontWeight: "600",
   },
   loginButton: {
