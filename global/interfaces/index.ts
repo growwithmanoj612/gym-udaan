@@ -31,7 +31,7 @@ export interface ILoginRequest {
   userName: string;
   password: string;
   businessDetailsId:number
-  expoToken?: string;
+   
 }
 
 export interface ILoginResponse {
