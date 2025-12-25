@@ -6,6 +6,10 @@ const attendanceBase = "attendance";
 const membershipBase = "membership";
 const dietPlanBase = "diet-plans";
 
+//owner
+const notificationBaseOwnwer = "owner/notification";
+
+
 export const API_ENDPOINTS = {
   auth: {
     login: `${authBase}/login`,
@@ -43,6 +47,8 @@ export const API_ENDPOINTS = {
     getUnreadCount: `${notificationBase}/get-unread-count`,
     getDietPlansNoti: `${notificationBase}/get-diet-plans-noti`,
 
+      getPageinated: `${notificationBaseOwnwer}/get-paginated`,
+
   },
 
   attendance: {
@@ -66,5 +72,22 @@ export const API_ENDPOINTS = {
     getAll:  `${dietPlanBase}/get-all`,
     getMy: `${dietPlanBase}/my-plans`,
     getById: (id: number) => `${dietPlanBase}/${id}`,
+  },
+
+
+
+
+  //owner
+    notificationsOwner: {
+    getAll: `${notificationBaseOwnwer}/get-all`,
+    
+    
+    markAsRead: (id: number) => `${notificationBaseOwnwer}/mark-as-read?id=${id}`,
+    markAllAsRead: `${notificationBaseOwnwer}/mark-all-as-read`,
+    getUnreadCount: `${notificationBaseOwnwer}/get-unread-count`, 
+
+
+     getPageinated: `${notificationBaseOwnwer}/get-paginated`,
+
   },
 };

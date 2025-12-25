@@ -15,15 +15,14 @@ export interface INotificationStore {
 
   // Actions
   fetchAll: () => Promise<void>;
-  fetchPaginated: () => Promise<void>;
-  fetchUnread: () => Promise<void>;
+   fetchPaginated: () => Promise<void>;
+   
   markAsRead: (id:  number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
-  getUnreadCount: () => Promise<void>; 
-  getDietPlansNoti: () => Promise<void>;
+  getUnreadCount: () => Promise<void>;  
 }
 
-const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
+const useNotificationStoreBaseOwner = create<INotificationStore>((set, get) => ({
   // State
   notifications: [],
   dietPlans: [],
@@ -35,7 +34,7 @@ const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
   fetchAll: async () => {
     set({ isLoading: true });
     try {
-      const response = await axios_auth.get(API_ENDPOINTS.notifications.getAll);
+      const response = await axios_auth.get(API_ENDPOINTS.notificationsOwner.getAll);
       
       if (response?.data && response?. status === 200) {
         const notifications = response?.data?.data;
@@ -58,7 +57,8 @@ const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
       set({ isLoading: false });
     }
   },
-  fetchPaginated: async () => {
+
+    fetchPaginated: async () => {
     set({ isLoading: true });
     try {
       const response = await axios_auth.get(API_ENDPOINTS.notifications.getPageinated);
@@ -85,33 +85,9 @@ const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
     }
   },
 
-  fetchUnread:  async () => {
-    set({ isLoading: true });
-    try {
-      const response = await axios_auth.get(API_ENDPOINTS.notifications.getUnread);
-      
-      if (response?.data && response?.status === 200) {
-        set({
-          unreadNotifications:  response?.data?.data,
-          // unreadCount: response?.data?.data.length,
-        });
-      }
-    } catch (error: any) {
-      const errorMessage = error. response?.data?.message || 'Failed to fetch unread notifications';
-      toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMessage,
-      });
-      throw error;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
   markAsRead: async (id: number) => {
     try {
-      const response = await axios_auth.put(API_ENDPOINTS.notifications. markAsRead(id));
+      const response = await axios_auth.put(API_ENDPOINTS.notificationsOwner. markAsRead(id));
       
       if (response?.status === 200) {
         const updatedNotifications = get().notifications.map((n) =>
@@ -140,7 +116,7 @@ const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
 
   markAllAsRead: async () => {
     try {
-      const response = await axios_auth. put(API_ENDPOINTS.notifications.markAllAsRead);
+      const response = await axios_auth. put(API_ENDPOINTS.notificationsOwner.markAllAsRead);
       
       if (response?.status === 200) {
         const updatedNotifications = get().notifications.map((n) => ({
@@ -172,7 +148,7 @@ const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
 
   getUnreadCount: async () => {
     try {
-      const response = await axios_auth.get(API_ENDPOINTS.notifications.getUnreadCount);
+      const response = await axios_auth.get(API_ENDPOINTS.notificationsOwner.getUnreadCount);
       
       if (response?.data && response?.status === 200) {
         set({ unreadCount: response?.data?.data });
@@ -181,21 +157,10 @@ const useNotificationStoreBase = create<INotificationStore>((set, get) => ({
       console.error('Failed to fetch unread count:', error);
     }
   },
-  getDietPlansNoti: async () => {
-    try {
-      const response = await axios_auth.get(API_ENDPOINTS.notifications.getDietPlansNoti);
-      
-      if (response?.data && response?.status === 200) {
-        set({ dietPlans: response?.data?.data });
-      }
-    } catch (error: any) {
-      console.error('Failed to fetch diet plans notifications:', error);
-    }
-  },
-     
+
  
 
    
 }));
 
-export const useNotificationStore = createSelectors(useNotificationStoreBase);
+export const useNotificationStoreOwner= createSelectors(useNotificationStoreBaseOwner);
