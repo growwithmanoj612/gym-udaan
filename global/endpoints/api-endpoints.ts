@@ -5,6 +5,7 @@ const notificationBase = "notification";
 const attendanceBase = "attendance";
 const membershipBase = "membership";
 const dietPlanBase = "diet-plans";
+const biometricBase = "biometric-devices";
 
 //owner
 const notificationBaseOwnwer = "owner/notification";
@@ -89,5 +90,9 @@ export const API_ENDPOINTS = {
 
      getPageinated: `${notificationBaseOwnwer}/get-paginated`,
 
+  },
+  biometric: {
+    getAll: `${biometricBase}/get-all`,
+    unlockDoor: (deviceSN: string) => `${biometricBase}/unlock-door/${deviceSN}`,
   },
 };

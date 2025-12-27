@@ -1,9 +1,9 @@
-import { IMembership } from '@/global/interfaces';
+import { IMemberShipDetails } from '@/global/interfaces';
 
 export interface IMembershipStore {
   // State
-  currentMembership: IMembership | null;
-  membershipHistory: IMembership[];
+  currentMembership: IMemberShipDetails | null;
+  membershipHistory: IMemberShipDetails[];
   credits: number;
   isLoading: boolean;
 
