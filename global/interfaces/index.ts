@@ -296,3 +296,32 @@ export interface IDietPlanListResponse {
   dietPlans: IDietPlanDetails[];
   total: number;
 }
+
+
+
+// Server response details (should match BiometricDeviceRes)
+export interface IBiometricsDetails  {
+  deviceName: string;
+  deviceSN: string;
+  deviceModel?: string;
+  deviceType?: string;
+  brand?: string;
+  locationDescription?: string;
+  status: string;
+
+
+  allowAutoDoorLock: boolean;
+  blockShiftAccess: boolean;
+
+  lastHeartbeatAt?: string;
+  createdAt?: string;
+  cloudServerUrl?: string;
+
+
+  // Hikvision-exclusive fields
+  devicePort?: number;
+  deviceUsername?: string;
+  devicePassword?: string;
+  ipAddress?: string;
+  doorNo?: number;
+}

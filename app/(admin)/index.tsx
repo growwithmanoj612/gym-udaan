@@ -1,13 +1,12 @@
-// app/(tabs)/index.tsx
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
 import { INotificationDetails } from "@/global/interfaces";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useBiometricStore } from "@/store/useBiometricStore";
 import { useMembershipStore } from "@/store/useMembershipStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useNotificationStoreOwner } from "@/store/useNotificationStoreForOwner";
- 
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -21,6 +20,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
 import Animated, {
   FadeInDown,
@@ -34,46 +34,56 @@ const { width } = Dimensions.get("window");
 export default function Home() {
   const router = useRouter();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ??  "light"];
+  const colors = Colors[colorScheme ?? "light"];
 
   // Stores
-  const appUser = useAuthStore. use.appUser();
-  const { notifications, unreadCount, isLoading, fetchPaginated,getUnreadCount } = useNotificationStoreOwner();
- 
+  const appUser = useAuthStore((state) => state.appUser);
+  const { notifications, unreadCount, isLoading, fetchPaginated, getUnreadCount } = useNotificationStoreOwner();
+  const { biometrics, getBiometrics, doorUnlock } = useBiometricStore();
 
   // Modal state
-  const [selectedMessage, setSelectedMessage] =
-    useState<INotificationDetails | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<INotificationDetails | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  // Unlock States
+  const [unlockCountdown, setUnlockCountdown] = useState<number | null>(null);
+  const [showUnlockOverlay, setShowUnlockOverlay] = useState(false);
+  const [unlockMessage, setUnlockMessage] = useState<string>("");
+
   const openMessageModal = (message: INotificationDetails) => {
     setSelectedMessage(message);
     setIsModalVisible(true);
-
-    // Optional: mark as read
-    // if (!message.isRead) {
-    //   markAsRead(message.id);
-    // }
   };
+
   const closeModal = () => {
     setIsModalVisible(false);
     setSelectedMessage(null);
   };
 
-
   useEffect(() => {
     fetchPaginated();
-    
     getUnreadCount();
+    getBiometrics();
   }, []);
 
-  // Get recent 3 messages
-  const recentMessages = notifications.slice(0, 3);
-
- 
+  // Unlock Countdown Effect
+  useEffect(() => {
+    let timer: number;
+    if (unlockCountdown !== null && unlockCountdown > 0) {
+      timer = setTimeout(() => setUnlockCountdown(unlockCountdown - 1), 1000);
+    } else if (unlockCountdown === 0) {
+      setUnlockMessage("Door unlocked!");
+      setTimeout(() => {
+        setShowUnlockOverlay(false);
+        setUnlockCountdown(null);
+        setUnlockMessage("");
+      }, 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [unlockCountdown]);
 
   const getMessageIcon = (type: string, isRead: boolean) => {
-    if (! isRead) return "mail-unread";
-    
+    if (!isRead) return "mail-unread";
     switch (type) {
       case "INFO":
         return "information-circle";
@@ -91,8 +101,7 @@ export default function Home() {
   };
 
   const getMessageColor = (priority: string, isRead: boolean) => {
-    if (!  isRead) return colors.primary;
-    
+    if (!isRead) return colors.primary;
     switch (priority) {
       case "HIGH":
         return colors.error;
@@ -100,8 +109,27 @@ export default function Home() {
         return colors.info;
       case "LOW":
         return colors.textSecondary;
-      default: 
+      default:
         return colors.textSecondary;
+    }
+  };
+
+  const handleUnlockDoor = async () => {
+    if (!biometrics || biometrics.length === 0) {
+      Alert.alert("No Biometric Device", "No biometric devices available for unlocking.");
+      return;
+    }
+    setShowUnlockOverlay(true);
+    setUnlockCountdown(6);
+    setUnlockMessage("Unlocking...");
+    try {
+      await doorUnlock(biometrics[0].deviceSN);
+      // Optionally show a success message via Alert or another state
+    } catch (error) {
+      Alert.alert("Unlock Failed", "Failed to send unlock request.");
+      setShowUnlockOverlay(false);
+      setUnlockCountdown(null);
+      setUnlockMessage("");
     }
   };
 
@@ -110,41 +138,47 @@ export default function Home() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <Animated.View
-          entering={FadeInUp. springify()}
+          entering={FadeInUp.springify()}
           style={[styles.header, { backgroundColor: colors.card }]}
         >
-          <View>
-            <Text style={[styles.greeting, { color: colors. textSecondary }]}>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.greeting, { color: colors.textSecondary }]}>
               Welcome back,
             </Text>
-            <Text style={[styles.userName, { color: colors. text }]}>
-              {appUser?. fullName?. split(" ")[0] || "Member"}!  👋
+            <Text style={[styles.userName, { color: colors.text }]}>
+              {appUser?.fullName?.split(" ")[0] || "Member"}! 👋
+
+              {biometrics.length}
             </Text>
+            {/* Unlock Door Button */}
+            {biometrics && biometrics.length > 0 && (
+              <TouchableOpacity
+                style={styles.unlockButton}
+                onPress={handleUnlockDoor}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="key" size={20} color="#FFFFFF" />
+                <Text style={styles.unlockButtonText}>Unlock Door</Text>
+              </TouchableOpacity>
+            )}
           </View>
           <TouchableOpacity
-            style={[
-              styles.notificationButton,
-              { backgroundColor: colors. backgroundSecondary },
-            ]}
+            style={[styles.notificationButton, { backgroundColor: colors.backgroundSecondary }]}
             onPress={() => router.push("/(tabs)/message")}
           >
             <Ionicons name="notifications" size={24} color={colors.text} />
             {unreadCount > 0 && (
               <View style={[styles.badge, { backgroundColor: colors.error }]}>
                 <Text style={styles.badgeText}>
-                  {unreadCount > 9 ? "9+" :  unreadCount}
+                  {unreadCount > 9 ? "9+" : unreadCount}
                 </Text>
               </View>
             )}
           </TouchableOpacity>
         </Animated.View>
 
-       
-
-       
-
         {/* Recent Messages */}
-        <Animated. View
+        <Animated.View
           entering={FadeInDown.delay(600).springify()}
           style={styles.section}
         >
@@ -166,35 +200,34 @@ export default function Home() {
                 Loading messages...
               </Text>
             </Card>
-          ) : recentMessages.length === 0 ? (
+          ) : notifications.length === 0 ? (
             <Card elevated style={styles.emptyCard}>
               <Ionicons
                 name="chatbubbles-outline"
                 size={40}
                 color={colors.textTertiary}
               />
-              <Text style={[styles.emptyText, { color: colors. textSecondary }]}>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                 No messages yet
               </Text>
             </Card>
           ) : (
-            recentMessages.map((message, index) => (
+            notifications.map((message, index) => (
               <AnimatedCard
                 key={message?.id}
                 entering={FadeInDown.delay(650 + index * 50).springify()}
                 elevated
                 style={[
                   styles.messageCard,
-                  ! message?.isRead && {
+                  !message?.isRead && {
                     backgroundColor: `${colors.primary}05`,
                     borderLeftWidth: 3,
-                    borderLeftColor:  colors.primary,
+                    borderLeftColor: colors.primary,
                   },
                 ]}
               >
-                  <TouchableOpacity
+                <TouchableOpacity
                   onPress={() => openMessageModal(message)}
-
                   activeOpacity={0.7}
                 >
                   <View style={styles.messageContent}>
@@ -210,19 +243,19 @@ export default function Home() {
                       ]}
                     >
                       <Ionicons
-                        name={getMessageIcon(message?. type, message?.isRead) as any}
+                        name={getMessageIcon(message?.type, message?.isRead) as any}
                         size={24}
                         color={getMessageColor(message?.priority, message?.isRead)}
                       />
                     </View>
 
-                    <View style={styles. messageDetails}>
+                    <View style={styles.messageDetails}>
                       <View style={styles.messageTitleRow}>
                         <Text
                           style={[
                             styles.messageTitle,
                             { color: colors.text },
-                            ! message?.isRead && styles.unreadTitle,
+                            !message?.isRead && styles.unreadTitle,
                           ]}
                           numberOfLines={1}
                         >
@@ -232,7 +265,7 @@ export default function Home() {
                           <View
                             style={[
                               styles.unreadDot,
-                              { backgroundColor:  colors.primary },
+                              { backgroundColor: colors.primary },
                             ]}
                           />
                         )}
@@ -256,7 +289,7 @@ export default function Home() {
                             month: "short",
                             day: "numeric",
                             hour: "2-digit",
-                            minute:  "2-digit",
+                            minute: "2-digit",
                           })}
                         </Text>
 
@@ -279,7 +312,7 @@ export default function Home() {
                     <Ionicons
                       name="chevron-forward"
                       size={20}
-                      color={colors. textTertiary}
+                      color={colors.textTertiary}
                     />
                   </View>
                 </TouchableOpacity>
@@ -300,21 +333,44 @@ export default function Home() {
             colors={[`${colors.primary}30`, `${colors.secondary}20`]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles. motivationGradient}
+            style={styles.motivationGradient}
           >
             <Ionicons name="trophy" size={32} color={colors.primary} />
-            <Text style={[styles.motivationTitle, { color: colors. text }]}>
-              Keep Going!  💪
+            <Text style={[styles.motivationTitle, { color: colors.text }]}>
+              Keep Going! 💪
             </Text>
             <Text
               style={[styles.motivationText, { color: colors.textSecondary }]}
             >
-             Manage Your Business with ease
+              Manage Your Business with ease
             </Text>
           </LinearGradient>
         </AnimatedCard>
       </ScrollView>
-      {/* ================= MESSAGE MODAL ================= */}
+
+      {/* Unlock Overlay Modal */}
+      <Modal
+        visible={showUnlockOverlay}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={styles.unlockOverlay}>
+          <View style={[styles.unlockModal, { backgroundColor: colors.card }]}>
+            <Ionicons name="key" size={64} color={colors.primary} />
+            <Text style={[styles.unlockMessage, { color: colors.text }]}>
+              {unlockMessage}
+            </Text>
+            {unlockCountdown !== null && unlockCountdown > 0 && (
+              <Text style={[styles.unlockCountdown, { color: colors.primary }]}>
+                {unlockCountdown}
+              </Text>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Message Modal */}
       <Modal
         visible={isModalVisible}
         transparent
@@ -381,13 +437,32 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  greeting:  {
+  headerLeft: {
+    flex: 1,
+  },
+  greeting: {
     fontSize: 14,
     marginBottom: 4,
   },
-  userName:  {
+  userName: {
     fontSize: 24,
     fontWeight: "bold",
+  },
+  unlockButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#10B981", // Green color
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 8,
+    alignSelf: "flex-start",
+  },
+  unlockButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 6,
   },
   notificationButton: {
     width: 44,
@@ -399,7 +474,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top:  6,
+    top: 6,
     right: 6,
     minWidth: 18,
     height: 18,
@@ -410,60 +485,17 @@ const styles = StyleSheet.create({
     borderColor: "#FFFFFF",
   },
   badgeText: {
-    fontSize:  10,
+    fontSize: 10,
     fontWeight: "bold",
     color: "#FFFFFF",
   },
-  membershipCard: {
-    margin: 20,
-    marginTop: 16,
-    padding: 20,
-  },
-  membershipContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  membershipLabel: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.8)",
-    marginBottom: 4,
-  },
-  membershipPlan: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 8,
-  },
-  expiryRow:  {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  expiryText: {
-    fontSize:  12,
-    color: "rgba(255,255,255,0.9)",
-  },
-  renewButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor:  "rgba(255,255,255,0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  renewText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  section:  {
+  section: {
     paddingHorizontal: 20,
     marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: "row",
-    justifyContent:  "space-between",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
   },
@@ -474,28 +506,6 @@ const styles = StyleSheet.create({
   },
   viewAll: {
     fontSize: 14,
-    fontWeight: "600",
-  },
-  quickActionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  actionCard: {
-    width: (width - 56) / 2,
-    padding: 16,
-    alignItems: "center",
-  },
-  actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  actionTitle: {
-    fontSize: 13,
     fontWeight: "600",
   },
   loadingCard: {
@@ -547,7 +557,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   unreadDot: {
-    width:  8,
+    width: 8,
     height: 8,
     borderRadius: 4,
     marginLeft: 8,
@@ -558,11 +568,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   messageFooter: {
-    flexDirection:  "row",
-    alignItems:  "center",
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
   },
-  messageTime:  {
+  messageTime: {
     fontSize: 11,
   },
   priorityBadge: {
@@ -598,45 +608,68 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-
-
-  // Add these styles for the Modal component to the existing `styles` object.
-modalOverlay: {
-  flex: 1,
-  backgroundColor: "rgba(0,0,0,0.5)", // Semi-transparent black background
-  justifyContent: "center",
-  alignItems: "center",
-},
-modalContent: {
-  width: "90%",
-  maxHeight: "80%",
-  borderRadius: 12,
-  padding: 20,
-  backgroundColor: "#FFFFFF", // Replace with colors.card if dynamic styling is necessary
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 10,
-  elevation: 5,
-},
-modalHeader: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 16,
-},
-modalTitle: {
-  fontSize: 18,
-  fontWeight: "bold",
-},
-modalMessage: {
-  fontSize: 14,
-  lineHeight: 22,
-  marginBottom: 16,
-},
-modalTime: {
-  fontSize: 12,
-  color: "gray", // Replace with `colors.textTertiary` if dynamic styling is necessary
-  marginTop: 8,
-},
+  unlockOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  unlockModal: {
+    width: "80%",
+    padding: 40,
+    borderRadius: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  unlockMessage: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  unlockCountdown: {
+    fontSize: 48,
+    fontWeight: "bold",
+    marginTop: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "90%",
+    maxHeight: "80%",
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  modalMessage: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  modalTime: {
+    fontSize: 12,
+    marginTop: 8,
+  },
 });

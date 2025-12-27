@@ -1,8 +1,8 @@
-import { INotification } from '@/global/interfaces';
+import { INotificationDetails } from '@/global/interfaces';
 
 export interface INotificationStore {
   // State
-  notifications: INotification[];
+  notifications: INotificationDetails[];
   unreadCount: number;
   isLoading: boolean;
 
