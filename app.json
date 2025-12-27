@@ -8,7 +8,6 @@
     "scheme": "gymudaan",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.niroj.gymudaan",
@@ -22,7 +21,6 @@
         ]
       }
     },
-
     "android": {
       "package": "com.niroj.gymudaan",
       "googleServicesFile": "./google-services.json",
@@ -37,19 +35,18 @@
       "permissions": ["INTERNET"],
       "usesCleartextTraffic": true
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/icon.png"
     },
-
     "plugins": [
       [
         "onesignal-expo-plugin",
         {
-          "mode": "development" 
+          "mode": "development"
         }
       ],
+      "./plugins/ios-config",   
       "expo-router",
       "expo-font",
       [
@@ -61,12 +58,10 @@
         }
       ]
     ],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
-
     "extra": {
       "router": {},
       "eas": {
@@ -75,3 +70,9 @@
     }
   }
 }
+
+
+
+
+
+
