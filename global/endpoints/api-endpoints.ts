@@ -47,7 +47,7 @@ export const API_ENDPOINTS = {
     getUnreadCount: `${notificationBase}/get-unread-count`,
     getDietPlansNoti: `${notificationBase}/get-diet-plans-noti`,
 
-      getPageinated: `${notificationBaseOwnwer}/get-paginated`,
+      getPageinated: `${notificationBase}/get-paginated`,
 
   },
 
