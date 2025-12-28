@@ -3,11 +3,10 @@ import { Colors } from "@/constants/color";
 import { INotificationDetails } from "@/global/interfaces";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useBiometricStore } from "@/store/useBiometricStore";
-import { useMembershipStore } from "@/store/useMembershipStore";
-import { useNotificationStore } from "@/store/useNotificationStore";
+import { useBiometricStore } from "@/store/useBiometricStore"; 
 import { useNotificationStoreOwner } from "@/store/useNotificationStoreForOwner";
 import { Ionicons } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -35,10 +34,11 @@ export default function Home() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+     const isFocused = useIsFocused();
 
   // Stores
   const appUser = useAuthStore((state) => state.appUser);
-  const { notifications, unreadCount, isLoading, fetchPaginated, getUnreadCount } = useNotificationStoreOwner();
+  const { notifications, unreadCount, isLoading, fetchPaginated, getUnreadCount ,markAsRead} = useNotificationStoreOwner();
   const { biometrics, getBiometrics, doorUnlock } = useBiometricStore();
 
   // Modal state
@@ -50,9 +50,13 @@ export default function Home() {
   const [showUnlockOverlay, setShowUnlockOverlay] = useState(false);
   const [unlockMessage, setUnlockMessage] = useState<string>("");
 
-  const openMessageModal = (message: INotificationDetails) => {
+ const openMessageModal = async(message: INotificationDetails) => {
     setSelectedMessage(message);
     setIsModalVisible(true);
+ 
+    if (!message.isRead) {
+     await markAsRead(message.id);
+    }
   };
 
   const closeModal = () => {
@@ -61,10 +65,16 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchPaginated();
-    getUnreadCount();
+ 
     getBiometrics();
   }, []);
+
+
+  // Re-fetch notifications and unread count on focus
+  useEffect(() => {
+    fetchPaginated(); 
+    getUnreadCount();
+  }, [isFocused]);
 
   // Unlock Countdown Effect
   useEffect(() => {
@@ -148,7 +158,7 @@ export default function Home() {
             <Text style={[styles.userName, { color: colors.text }]}>
               {appUser?.fullName?.split(" ")[0] || "Member"}! 👋
 
-              {biometrics.length}
+            
             </Text>
             {/* Unlock Door Button */}
             {biometrics && biometrics.length > 0 && (
@@ -164,7 +174,7 @@ export default function Home() {
           </View>
           <TouchableOpacity
             style={[styles.notificationButton, { backgroundColor: colors.backgroundSecondary }]}
-            onPress={() => router.push("/(tabs)/message")}
+            onPress={() => router.push("/(admin)/message")}
           >
             <Ionicons name="notifications" size={24} color={colors.text} />
             {unreadCount > 0 && (

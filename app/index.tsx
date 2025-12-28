@@ -1,4 +1,6 @@
-import { Redirect } from "expo-router";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useIsFocused } from "@react-navigation/native";
+import { Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
@@ -7,11 +9,28 @@ import { ActivityIndicator, View } from "react-native";
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
+  const isFocused = useIsFocused();
+  const { checkAuth, isAuthenticated, appUser } = useAuthStore();
 
   // Simulate auth check - replace with your actual auth logic
-  const isAuthenticated = false;
-  const hasCompletedOnboarding = false;
-  const hasSelectedTenant = false;
+
+
+  // future ma change hunxa we will use flag
+  const hasCompletedOnboarding = appUser?.fullName;
+  const hasSelectedTenant = appUser?.businessDetailsId;
+
+
+
+
+
+
+
+
+  
+      useEffect(() => {
+    
+      checkAuth();
+    }, [isFocused]);
 
   useEffect(() => {
     // Simulate checking auth state

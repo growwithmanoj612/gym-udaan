@@ -1,20 +1,22 @@
-import { useEffect } from "react";
-import { Slot, useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
+  useIsFocused,
 } from "@react-navigation/native";
-import { OneSignal, LogLevel } from "react-native-onesignal";
+import { Slot, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { LogLevel, OneSignal } from "react-native-onesignal";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ToastProvider } from "@/providers/toast-provider";
-import { useAuthStore } from "@/store/useAuthStore";  // Add this import
+import { useAuthStore } from "@/store/useAuthStore"; // Add this import
 
 export default function RootLayout() {
+   
   const colorScheme = useColorScheme();
-  const router = useRouter();
+  const router = useRouter(); 
 
   useEffect(() => {
     // 🔹 OneSignal debug logs (remove in production)
@@ -51,6 +53,9 @@ if (state.isAuthenticated && state.appUser?.id) {
     // Cleanup subscription on unmount
     return unsubscribe;
   }, [router]);
+
+
+
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
