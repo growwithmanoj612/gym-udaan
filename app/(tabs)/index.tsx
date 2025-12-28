@@ -8,6 +8,7 @@ import { useMembershipStore } from "@/store/useMembershipStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
  
 import { Ionicons } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -35,23 +36,26 @@ export default function Home() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ??  "light"];
 
+  // for re-fetching on focus
+    const isFocused = useIsFocused();
+
   // Stores
   const appUser = useAuthStore. use.appUser();
-  const { notifications, unreadCount, isLoading, fetchPaginated,getUnreadCount } = useNotificationStore();
+  const { notifications, unreadCount, isLoading, fetchPaginated,getUnreadCount ,markAsRead} = useNotificationStore();
   const { currentMembership, fetchCurrentMembership } = useMembershipStore();
 
   // Modal state
   const [selectedMessage, setSelectedMessage] =
     useState<INotificationDetails | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const openMessageModal = (message: INotificationDetails) => {
+  const openMessageModal = async(message: INotificationDetails) => {
     setSelectedMessage(message);
     setIsModalVisible(true);
 
     // Optional: mark as read
-    // if (!message.isRead) {
-    //   markAsRead(message.id);
-    // }
+    if (!message.isRead) {
+     await markAsRead(message.id);
+    }
   };
   const closeModal = () => {
     setIsModalVisible(false);
@@ -59,14 +63,21 @@ export default function Home() {
   };
 
 
+  // Fetch current membership on mount
   useEffect(() => {
-    fetchPaginated();
+ 
     fetchCurrentMembership();
-    getUnreadCount();
   }, []);
 
-  // Get recent 3 messages
-  const recentMessages = notifications.slice(0, 3);
+
+
+  // Re-fetch notifications and unread count on focus
+  useEffect(() => {
+    fetchPaginated(); 
+    getUnreadCount();
+  }, [isFocused]);
+
+ 
 
   const quickActions = [
     {
@@ -250,7 +261,7 @@ export default function Home() {
                 Loading messages...
               </Text>
             </Card>
-          ) : recentMessages.length === 0 ? (
+          ) : notifications?.length === 0 ? (
             <Card elevated style={styles.emptyCard}>
               <Ionicons
                 name="chatbubbles-outline"
@@ -262,7 +273,7 @@ export default function Home() {
               </Text>
             </Card>
           ) : (
-            recentMessages.map((message, index) => (
+            notifications?.map((message, index) => (
               <AnimatedCard
                 key={message?.id}
                 entering={FadeInDown.delay(650 + index * 50).springify()}

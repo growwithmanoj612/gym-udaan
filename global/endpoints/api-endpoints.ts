@@ -14,7 +14,7 @@ const notificationBaseOwnwer = "owner/notification";
 export const API_ENDPOINTS = {
   auth: {
     login: `${authBase}/login`,
-    check: `${authBase}/check`,
+    check: (accessToken:string) => `${authBase}/check-auth?accessToken=${accessToken}`,
     logout: `${authBase}/logout`,
     refreshToken: `${authBase}/refresh-token`,
     

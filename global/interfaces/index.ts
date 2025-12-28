@@ -25,6 +25,7 @@ export interface IAppUserMemberDetails {
   fullName: string;
   phone: string;
   address: string;
+  businessDetailsId: number;
 }
 
 export interface ILoginRequest {

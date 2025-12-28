@@ -17,6 +17,7 @@ const defaultAppUser: IAppUserMemberDetails = {
   phone: '',
   address: '',
   appUserRole: null,
+  businessDetailsId: 0,
 };
 
 const useAuthStoreBase = create<IAuthStore>((set, get) => ({
@@ -72,26 +73,26 @@ const useAuthStoreBase = create<IAuthStore>((set, get) => ({
         text1: 'Login Failed',
         text2: errorMessage,
       });
-     return null;
+      return null;
     } finally {
       set({ isLoading: false });
     }
   },
-   changePassword: async ( oldPassword: string,newPassword: string) => {
+  changePassword: async (oldPassword: string, newPassword: string) => {
     try {
       const res = await axios_auth.post(
         `auth/change-password`,
         { oldPassword, newPassword }
       );
 
-      if(res?.data?.status === 200){
+      if (res?.data?.status === 200) {
 
-  toast.show({
-        type:  'success' ,
-        text1:  res?.data?.message,
-        text2: 'Your password has been changed successfully.',
-      });
-return
+        toast.show({
+          type: 'success',
+          text1: res?.data?.message,
+          text2: 'Your password has been changed successfully.',
+        });
+        return
       }
       toast.show({
         type: 'error',
@@ -107,7 +108,7 @@ return
         text2: errorMessage,
       });
     }
-      
+
   },
 
   logout: async () => {
@@ -145,15 +146,21 @@ return
         return;
       }
 
-      const response = await axios_auth.get(API_ENDPOINTS.auth.check);
+      const response = await axios_auth.get(API_ENDPOINTS.auth.check(token));
 
       if (response?.data && response?.status === 200) {
-        const user = response.data.data;
+        const { token, refreshToken, appUser } = response.data.data;
+
+        await tokenManager.setAccessToken(token); // Update access token
         set({
-          appUser: user,
+          appUser: appUser,
           token,
           isAuthenticated: true,
         });
+      }
+      else {
+        await tokenManager.removeTokens(); // Clear tokens if auth check fails
+        set({ isAuthenticated: false, appUser: null, token: null });
       }
     } catch (error) {
       console.error('Auth check failed:', error);
