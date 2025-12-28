@@ -1,5 +1,5 @@
 // app/(auth)/(tabs)/notifications.tsx
-import NotificationItem from "@/components/notification/notifications";
+// import NotificationItem from "@/components/notification/notifications";
 import { Colors } from "@/constants/color";
 import { notifications as seedData } from "@/data/notifications";
 import { Ionicons } from "@expo/vector-icons";
