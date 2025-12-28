@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // app/(tabs)/_layout.tsx
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors } from "@/constants/color";
@@ -13,23 +12,10 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const unreadCount = useNotificationStore((state) => state.unreadCount);
-=======
-import { Tabs } from 'expo-router';
-import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
->>>>>>> origin/main
 
   return (
     <Tabs
       screenOptions={{
-<<<<<<< HEAD
         tabBarActiveTintColor: colors. primary,
         tabBarInactiveTintColor: colors.textTertiary,
         headerShown: false,
@@ -75,32 +61,7 @@ export default function TabLayout() {
           tabBarBadge: unreadCount > 0 ?  unreadCount : undefined,
         }}
       />
-      <Tabs.Screen
-        name="diet-plans"
-        options={{
-          title: "Diet Plans",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ?  "restaurant" : "restaurant-outline"}
-              size={24}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="attendance"
-        options={{
-          title: "Check-in",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "checkmark-circle" : "checkmark-circle-outline"}
-              size={28}
-              color={color}
-            />
-          ),
-        }}
-      />
+     
       <Tabs.Screen
         name="profile"
         options={{
@@ -112,30 +73,8 @@ export default function TabLayout() {
               color={color}
             />
           ),
-=======
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
->>>>>>> origin/main
         }}
       />
     </Tabs>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> origin/main

@@ -4,21 +4,73 @@
     "slug": "gym-udaan",
     "version": "1.0.0",
     "orientation": "portrait",
+<<<<<<< HEAD
+    "icon": "./assets/icon.png",
+=======
     "icon": "./assets/images/icon.png",
+>>>>>>> origin/main
     "scheme": "gymudaan",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+<<<<<<< HEAD
+      "supportsTablet": true,
+      "bundleIdentifier": "com.niroj.gymudaan",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      },
+      "entitlements": {
+        "aps-environment": "development",
+        "com.apple.security.application-groups": [
+          "group.com.niroj.gymudaan.onesignal"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.niroj.gymudaan",
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "backgroundColor": "#000000",
+=======
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
+>>>>>>> origin/main
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
+<<<<<<< HEAD
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["INTERNET"],
+      "usesCleartextTraffic": true
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/icon.png"
+    },
+    "plugins": [
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development"
+        }
+      ],
+      "./plugins/ios-config",   
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ]
+=======
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -40,10 +92,29 @@
         }
       ],
       "expo-font"
+>>>>>>> origin/main
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+<<<<<<< HEAD
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "39073f95-5673-4ae3-a38f-289fda5351df"
+      }
     }
   }
 }
+
+
+
+
+
+
+=======
+    }
+  }
+}
+>>>>>>> origin/main
