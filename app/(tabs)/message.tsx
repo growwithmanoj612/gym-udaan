@@ -1,11 +1,9 @@
-// app/(tabs)/messages.tsx
-import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
+import { PaginationPeriodReq } from "@/global/enums";
 import { INotificationDetails } from "@/global/interfaces";
-import { useColorScheme } from "@/hooks/use-color-scheme"; 
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,43 +16,43 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import MessageCard from "../component/message-card";
+import MessageModal from "../component/message-card-modal";
 
-const AnimatedCard = Animated.createAnimatedComponent(Card);
 
 export default function Messages() {
-  const router = useRouter();
+
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  const { notifications, isLoading, fetchAll, markAsRead, markAllAsRead } =
+  const { notifications, isLoading, fetchPaginated, markAsRead, markAllAsRead, paginationPeriodReq, setPaginationPeriodReq, unreadCount } =
     useNotificationStore();
 
+  // Modal state
+  const [selectedMessage, setSelectedMessage] =
+    useState<INotificationDetails | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const openMessageModal = (message: INotificationDetails) => {
+    setSelectedMessage(message);
+    setIsModalVisible(true);
 
-      // Modal state
-      const [selectedMessage, setSelectedMessage] =
-        useState<INotificationDetails | null>(null);
-      const [isModalVisible, setIsModalVisible] = useState(false);
-      const openMessageModal = (message: INotificationDetails) => {
-        setSelectedMessage(message);
-        setIsModalVisible(true);
-    
-       
-        if (!message.isRead) {
-          markAsRead(message.id);
-        }
-      };
-      const closeModal = () => {
-        setIsModalVisible(false);
-        setSelectedMessage(null);
-      };
-    
+
+    if (!message.isRead) {
+      markAsRead(message.id);
+    }
+  };
+  const closeModal = () => {
+    setIsModalVisible(false);
+    setSelectedMessage(null);
+  };
+
 
   useEffect(() => {
-    fetchAll();
-  }, []);
+    fetchPaginated();
+  }, [paginationPeriodReq]);
 
   const handleRefresh = () => {
-    fetchAll();
+    fetchPaginated();
   };
 
   const handleMarkAsRead = (id: number) => {
@@ -65,37 +63,31 @@ export default function Messages() {
     markAllAsRead();
   };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "INFO":
-        return "information-circle";
-      case "WARNING":
-        return "warning";
-      case "ALERT":
-        return "alert-circle";
-      case "PROMOTION":
-        return "gift";
-      case "REMINDER":
-        return "time";
+  const handlePeriodChange = (period: PaginationPeriodReq) => {
+    setPaginationPeriodReq(period);
+    // fetchPaginated will be called via useEffect
+  };
+
+  const getPeriodLabel = (period: PaginationPeriodReq) => {
+    switch (period) {
+      case PaginationPeriodReq.RECENT_10_DATA:
+        return 'Recent 10';
+      case PaginationPeriodReq.PAST_3_DAYS:
+        return 'Past 3 Days';
+      case PaginationPeriodReq.PAST_7_DAYS:
+        return 'Past 7 Days';
+      case PaginationPeriodReq.PAST_15_DAYS:
+        return 'Past 15 Days';
+      case PaginationPeriodReq.PAST_30_DAYS:
+        return 'Past 30 Days';
+      case PaginationPeriodReq.ALL_TIME:
+        return 'All Time';
       default:
-        return "notifications";
+        return period;
     }
   };
 
-  const getNotificationColor = (priority: string) => {
-    switch (priority) {
-      case "HIGH":
-        return colors.error;
-      case "NORMAL":
-        return colors.primary;
-      case "LOW": 
-        return colors.textSecondary;
-      default: 
-        return colors.primary;
-    }
-  };
 
-  const unreadNotifications = notifications.filter((n) => !n.isRead);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -107,7 +99,7 @@ export default function Messages() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           Messages
         </Text>
-        {unreadNotifications.length > 0 && (
+        {unreadCount > 0 && (
           <TouchableOpacity onPress={handleMarkAllAsRead}>
             <Text style={[styles.markAllRead, { color: colors.primary }]}>
               Mark all read
@@ -116,8 +108,33 @@ export default function Messages() {
         )}
       </Animated.View>
 
+      {/* Period Filter */}
+      <View style={[styles.filterContainer, { backgroundColor: colors.card }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+          {Object.values(PaginationPeriodReq).map((period) => (
+            <TouchableOpacity
+              key={period}
+              style={[
+                styles.filterButton,
+                { borderColor: colors.primary },
+                paginationPeriodReq === period && { backgroundColor: colors.primary },
+              ]}
+              onPress={() => handlePeriodChange(period)}
+              disabled={isLoading}
+            >
+              <Text style={[
+                styles.filterText,
+                { color: paginationPeriodReq === period ? 'white' : colors.text },
+              ]}>
+                {getPeriodLabel(period)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       {isLoading && notifications.length === 0 ? (
-        <View style={styles. loadingContainer}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : notifications.length === 0 ? (
@@ -136,7 +153,7 @@ export default function Messages() {
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             You don't have any messages yet
           </Text>
-        </Animated. View>
+        </Animated.View>
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -150,159 +167,24 @@ export default function Messages() {
         >
           <View style={styles.section}>
             {notifications.map((notification, index) => (
-              <AnimatedCard
-                key={notification.id}
-                entering={FadeInDown.delay(100 + index * 30).springify()}
-                elevated
-                style={[
-                  styles.notificationCard,
-                  ! notification.isRead && {
-                    backgroundColor: `${colors.primary}05`,
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  onPress={() => openMessageModal(notification)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.notificationContent}>
-                    <View
-                      style={[
-                        styles.iconContainer,
-                        {
-                          backgroundColor: `${getNotificationColor(
-                            notification.priority
-                          )}15`,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={getNotificationIcon(notification.type) as any}
-                        size={24}
-                        color={getNotificationColor(notification.priority)}
-                      />
-                    </View>
-
-                    <View style={styles. textContainer}>
-                      <View style={styles.headerRow}>
-                        <Text
-                          style={[
-                            styles.title,
-                            { color: colors.text },
-                            ! notification.isRead && styles.unreadTitle,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {notification.type}
-                        </Text>
-                        {!notification.isRead && (
-                          <View
-                            style={[
-                              styles.unreadDot,
-                              { backgroundColor: colors.primary },
-                            ]}
-                          />
-                        )}
-                      </View>
-
-                      <Text
-                        style={[
-                          styles.message,
-                          { color: colors.textSecondary },
-                        ]}
-                        numberOfLines={2}
-                      >
-                        {notification.message}
-                      </Text>
-
-                      <View style={styles.footer}>
-                        <Text
-                          style={[styles.date, { color: colors. textTertiary }]}
-                        >
-                          {new Date(notification.createdDate).toLocaleString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute:  "2-digit",
-                            }
-                          )}
-                        </Text>
-
-                        {notification.isHighPriority && (
-                          <View
-                            style={[
-                              styles.priorityBadge,
-                              { backgroundColor: `${colors.error}20` },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.priorityText,
-                                { color: colors.error },
-                              ]}
-                            >
-                              High Priority
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </AnimatedCard>
+              <MessageCard
+                key={notification.id || index}
+                notification={notification}
+                onPress={openMessageModal}
+              />
             ))}
           </View>
-           {/* ================= MESSAGE MODAL ================= */}
-                <Modal
-                  visible={isModalVisible}
-                  transparent
-                  animationType="slide"
-                  onRequestClose={closeModal}
-                >
-                  <View style={styles.modalOverlay}>
-                    <View
-                      style={[
-                        styles.modalContent,
-                        { backgroundColor: colors.card },
-                      ]}
-                    >
-                      <View style={styles.modalHeader}>
-                        <Text style={[styles.modalTitle, { color: colors.text }]}>
-                          {selectedMessage?.type.replaceAll("_", " ")}
-                        </Text>
-                        <TouchableOpacity onPress={closeModal}>
-                          <Ionicons name="close" size={24} color={colors.text} />
-                        </TouchableOpacity>
-                      </View>
-          
-                      <ScrollView>
-                        <Text
-                          style={[
-                            styles.modalMessage,
-                            { color: colors.textSecondary },
-                          ]}
-                        >
-                          {selectedMessage?.message}
-                        </Text>
-          
-                        <Text
-                          style={[
-                            styles.modalTime,
-                            { color: colors.textTertiary },
-                          ]}
-                        >
-                          {selectedMessage &&
-                            new Date(selectedMessage.createdDate).toLocaleString()}
-                        </Text>
-                      </ScrollView>
-                    </View>
-                  </View>
-                </Modal>
+          {/* ================= MESSAGE MODAL ================= */}
+
+          <MessageModal
+            visible={isModalVisible}
+            onClose={closeModal}
+            selectedMessage={selectedMessage}
+          />
+
         </ScrollView>
       )}
-      
+
     </View>
   );
 }
@@ -315,7 +197,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal:  20,
+    paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
     shadowColor: "#000",
@@ -332,8 +214,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
+  filterContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  filterScroll: {
+    paddingRight: 20,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   loadingContainer: {
-    flex:  1,
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -356,104 +260,42 @@ const styles = StyleSheet.create({
   section: {
     padding: 20,
   },
-  notificationCard: {
-    marginBottom: 12,
-    padding: 16,
-  },
-  notificationContent: {
-    flexDirection: "row",
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: "center",
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
-    marginRight: 12,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  headerRow: {
-    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
   },
-  title:  {
-    fontSize: 15,
-    fontWeight: "600",
-    flex: 1,
+  modalContent: {
+    width: "90%",
+    maxHeight: "80%",
+    borderRadius: 12,
+    padding: 20,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  unreadTitle: {
-    fontWeight: "700",
-  },
-  unreadDot: {
-    width:  8,
-    height: 8,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  message:  {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 8,
-  },
-  footer: {
+  modalHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
   },
-  date: {
-    fontSize: 11,
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
   },
-  priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  modalMessage: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 16,
   },
-  priorityText: {
-    fontSize: 10,
-    fontWeight: "600",
+  modalTime: {
+    fontSize: 12,
+    color: "gray",
+    marginTop: 8,
   },
-
-
-  // Add these styles for the Modal component to the existing `styles` object.
-modalOverlay: {
-  flex: 1,
-  backgroundColor: "rgba(0,0,0,0.5)", // Semi-transparent black background
-  justifyContent: "center",
-  alignItems: "center",
-},
-modalContent: {
-  width: "90%",
-  maxHeight: "80%",
-  borderRadius: 12,
-  padding: 20,
-  backgroundColor: "#FFFFFF", // Replace with colors.card if dynamic styling is necessary
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 10,
-  elevation: 5,
-},
-modalHeader: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 16,
-},
-modalTitle: {
-  fontSize: 18,
-  fontWeight: "bold",
-},
-modalMessage: {
-  fontSize: 14,
-  lineHeight: 22,
-  marginBottom: 16,
-},
-modalTime: {
-  fontSize: 12,
-  color: "gray", // Replace with `colors.textTertiary` if dynamic styling is necessary
-  marginTop: 8,
-},
 });

@@ -97,3 +97,14 @@ export enum ShiftType {
   DIET_PLAN = "DIET_PLAN",
   FACILITY_EXPIRED = "FACILITY_EXPIRED",
 }
+
+
+export enum PaginationPeriodReq{
+ 
+  RECENT_10_DATA = "RECENT_10_DATA",
+  PAST_3_DAYS = "PAST_3_DAYS",
+  PAST_7_DAYS = "PAST_7_DAYS",
+  PAST_15_DAYS = "PAST_15_DAYS",
+  PAST_30_DAYS = "PAST_30_DAYS",
+  ALL_TIME = "ALL_TIME",
+}

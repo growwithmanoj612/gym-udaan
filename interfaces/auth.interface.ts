@@ -9,6 +9,7 @@ export interface IAuthStore {
   hasCompletedOnboarding: boolean;
   selectedTenantId: string | null;
   token: string | null;
+  isOffline : boolean
 
   // Actions
   setAppUser: (user: IAppUserMemberDetails) => void;

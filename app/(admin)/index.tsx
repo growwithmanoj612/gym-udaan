@@ -26,6 +26,8 @@ import Animated, {
   FadeInRight,
   FadeInUp,
 } from "react-native-reanimated";
+import MessageModal from "../component/message-card-modal";
+import MessageCard from "../component/message-card";
 
 const AnimatedCard = Animated.createAnimatedComponent(Card);
 const { width } = Dimensions.get("window");
@@ -92,37 +94,7 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [unlockCountdown]);
 
-  const getMessageIcon = (type: string, isRead: boolean) => {
-    if (!isRead) return "mail-unread";
-    switch (type) {
-      case "INFO":
-        return "information-circle";
-      case "WARNING":
-        return "warning";
-      case "ALERT":
-        return "alert-circle";
-      case "PROMOTION":
-        return "gift";
-      case "REMINDER":
-        return "time";
-      default:
-        return "mail-open";
-    }
-  };
-
-  const getMessageColor = (priority: string, isRead: boolean) => {
-    if (!isRead) return colors.primary;
-    switch (priority) {
-      case "HIGH":
-        return colors.error;
-      case "NORMAL":
-        return colors.info;
-      case "LOW":
-        return colors.textSecondary;
-      default:
-        return colors.textSecondary;
-    }
-  };
+ 
 
   const handleUnlockDoor = async () => {
     if (!biometrics || biometrics.length === 0) {
@@ -196,7 +168,7 @@ export default function Home() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Recent Messages
             </Text>
-            <TouchableOpacity onPress={() => router.push("/(tabs)/message")}>
+            <TouchableOpacity onPress={() => router.push("/(admin)/message")}>
               <Text style={[styles.viewAll, { color: colors.primary }]}>
                 View All
               </Text>
@@ -222,111 +194,14 @@ export default function Home() {
               </Text>
             </Card>
           ) : (
-            notifications.map((message, index) => (
-              <AnimatedCard
-                key={message?.id}
-                entering={FadeInDown.delay(650 + index * 50).springify()}
-                elevated
-                style={[
-                  styles.messageCard,
-                  !message?.isRead && {
-                    backgroundColor: `${colors.primary}05`,
-                    borderLeftWidth: 3,
-                    borderLeftColor: colors.primary,
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  onPress={() => openMessageModal(message)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.messageContent}>
-                    <View
-                      style={[
-                        styles.messageIcon,
-                        {
-                          backgroundColor: `${getMessageColor(
-                            message?.priority,
-                            message?.isRead
-                          )}15`,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={getMessageIcon(message?.type, message?.isRead) as any}
-                        size={24}
-                        color={getMessageColor(message?.priority, message?.isRead)}
-                      />
-                    </View>
-
-                    <View style={styles.messageDetails}>
-                      <View style={styles.messageTitleRow}>
-                        <Text
-                          style={[
-                            styles.messageTitle,
-                            { color: colors.text },
-                            !message?.isRead && styles.unreadTitle,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {message?.type}
-                        </Text>
-                        {!message?.isRead && (
-                          <View
-                            style={[
-                              styles.unreadDot,
-                              { backgroundColor: colors.primary },
-                            ]}
-                          />
-                        )}
-                      </View>
-
-                      <Text
-                        style={[
-                          styles.messageText,
-                          { color: colors.textSecondary },
-                        ]}
-                        numberOfLines={2}
-                      >
-                        {message?.message}
-                      </Text>
-
-                      <View style={styles.messageFooter}>
-                        <Text
-                          style={[styles.messageTime, { color: colors.textTertiary }]}
-                        >
-                          {new Date(message?.createdDate).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </Text>
-
-                        {message?.isHighPriority && (
-                          <View
-                            style={[
-                              styles.priorityBadge,
-                              { backgroundColor: `${colors.error}15` },
-                            ]}
-                          >
-                            <Ionicons name="alert-circle" size={12} color={colors.error} />
-                            <Text style={[styles.priorityText, { color: colors.error }]}>
-                              Urgent
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color={colors.textTertiary}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </AnimatedCard>
+            notifications
+            ?.slice(0,10)
+            ?.map((message, index) => (
+            <MessageCard
+                             key={message.id || index}
+                             notification={message}
+                             onPress={openMessageModal}
+                           />
             ))
           )}
         </Animated.View>
@@ -381,51 +256,11 @@ export default function Home() {
       </Modal>
 
       {/* Message Modal */}
-      <Modal
-        visible={isModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalContent,
-              { backgroundColor: colors.card },
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {selectedMessage?.type.replaceAll("_", " ")}
-              </Text>
-              <TouchableOpacity onPress={closeModal}>
-                <Ionicons name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView>
-              <Text
-                style={[
-                  styles.modalMessage,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                {selectedMessage?.message}
-              </Text>
-
-              <Text
-                style={[
-                  styles.modalTime,
-                  { color: colors.textTertiary },
-                ]}
-              >
-                {selectedMessage &&
-                  new Date(selectedMessage.createdDate).toLocaleString()}
-              </Text>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+         <MessageModal
+                   visible={isModalVisible}
+                   onClose={closeModal}
+                   selectedMessage={selectedMessage}
+                 />
     </View>
   );
 }

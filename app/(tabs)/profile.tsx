@@ -6,18 +6,18 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useMembershipStore } from "@/store/useMembershipStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState, useEffect, Fragment } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-  Modal,
 } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
-import MembershipCard from "../component/membership-card";
+import Animated, { FadeInUp, Layout } from "react-native-reanimated";
+import { toast } from "@/providers/toast-provider"; // Adjust if your toast import differs
+import MembershipCard from "../component/membership-card"; 
+import ChangePasswordModal from "../component/change-password-modal";
 
 const AnimatedCard = Animated.createAnimatedComponent(Card);
 
@@ -28,15 +28,13 @@ export default function Profile() {
   const { logout, appUser, changePassword } = useAuthStore();
   const { currentMembership, fetchAll, memberships } = useMembershipStore();
 
-  const [showHistory, setShowHistory] = useState(false); // Membership history toggle
-  const [showChangePassword, setShowChangePassword] = useState(false); // Change password modal toggle
-  const [oldPassword, setOldPassword] = useState(""); // Old password input
-  const [newPassword, setNewPassword] = useState(""); // New password input
-  const [isSubmitting, setIsSubmitting] = useState(false); // Track submission state
+  const [showHistory, setShowHistory] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (showHistory) {
-      fetchAll(); // Fetch membership history if toggled
+      fetchAll();
     }
   }, [showHistory]);
 
@@ -45,17 +43,26 @@ export default function Profile() {
     router.replace("/(auth)/login");
   };
 
-  const handlePasswordChange = async () => {
-    if (!oldPassword || !newPassword) {
-      alert("Please fill in both current and new password.");
-      return;
-    }
+  const handlePasswordChange = async (
+    oldPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ) => {
     setIsSubmitting(true);
     try {
-      await changePassword(oldPassword, newPassword); // Call the changePassword function
-      setShowChangePassword(false); // Close the modal after successful password change
+      await changePassword(oldPassword, newPassword);
+      setShowChangePassword(false);
+      toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Password changed successfully!",
+      });
     } catch (error: any) {
-      console.error("Error changing password:", error?.message);
+      toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error?.message || "Failed to change password.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -75,12 +82,6 @@ export default function Profile() {
               <View style={styles.avatar}>
                 <Ionicons name="person" size={40} color="#FFFFFF" />
               </View>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => setShowChangePassword(true)}
-              >
-                <Ionicons name="pencil" size={16} color="#FFFFFF" />
-              </TouchableOpacity>
             </View>
             <Text style={styles.userName}>{appUser?.fullName}</Text>
             <View style={styles.infoItem}>
@@ -90,42 +91,87 @@ export default function Profile() {
           </View>
         </AnimatedCard>
 
-        {/* Membership Section */}
-        {!showHistory && currentMembership && (
-          <>
+        {/* Account Section */}
+        <Animated.View
+          entering={FadeInUp.delay(200).springify()}
+          style={styles.section}
+        >
+          <View style={styles.sectionHeader}>
+            <Ionicons name="person-circle" size={20} color={colors.primary} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Current Membership
+              Account
             </Text>
+          </View>
+          <Card elevated style={styles.accountCard}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => setShowChangePassword(true)}
+            >
+              <View style={styles.menuIcon}>
+                <Ionicons name="key" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.menuContent}>
+                <Text style={[styles.menuTitle, { color: colors.text }]}>
+                  Change Password
+                </Text>
+                <Text style={[styles.menuSubtitle, { color: colors.textSecondary }]}>
+                  Update your account security
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </Card>
+        </Animated.View>
+
+        {/* Membership Section */}
+        <Animated.View
+          entering={FadeInUp.delay(300).springify()}
+          style={styles.section}
+        >
+          <View style={styles.sectionHeader}>
+            <Ionicons name="card" size={20} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Membership
+            </Text>
+          </View>
+
+          {!showHistory && currentMembership && (
             <MembershipCard membership={currentMembership} />
-          </>
-        )}
+          )}
 
-        {/* View Membership History Button */}
-        <View style={styles.section}>
           <Button
-            title={showHistory ? "Hide History" : "View Membership History"}
+            title={showHistory ? "Hide History" : "View History"}
             onPress={() => setShowHistory(!showHistory)}
-            variant="primary"
-            size="large"
-            style={[
-              styles.toggleHistoryButton,
-              { backgroundColor: colors.primary },
-            ]}
-            textStyle={{ color: "#FFFFFF" }}
+            variant="outline"
+            size="medium"
+            style={[styles.historyButton, { borderColor: colors.primary }]}
+            textStyle={{ color: colors.primary }}
           />
-        </View>
 
-        {/* Membership History List */}
-        {showHistory &&
-          memberships?.length > 0 &&
-          memberships.map((membership) => (
-            <Fragment key={membership.id}>
-              <MembershipCard membership={membership} />
-            </Fragment>
-          ))}
+          {showHistory && (
+            <Animated.View
+              entering={FadeInUp.springify()}
+              layout={Layout.springify()}
+              style={styles.historyContainer}
+            >
+              {memberships?.length > 0 ? (
+                memberships.map((membership) => (
+                  <MembershipCard key={membership.id} membership={membership} />
+                ))
+              ) : (
+                <Text style={[styles.noHistory, { color: colors.textSecondary }]}>
+                  No membership history available.
+                </Text>
+              )}
+            </Animated.View>
+          )}
+        </Animated.View>
 
-        {/* Logout Button */}
-        <View style={styles.logoutSection}>
+        {/* Actions Section */}
+        <Animated.View
+          entering={FadeInUp.delay(400).springify()}
+          style={styles.actionsSection}
+        >
           <Button
             title="Logout"
             onPress={handleLogout}
@@ -134,76 +180,16 @@ export default function Profile() {
             style={[styles.logoutButton, { borderColor: colors.error }]}
             textStyle={{ color: colors.error }}
           />
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Change Password Modal */}
-      <Modal
+      <ChangePasswordModal
         visible={showChangePassword}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowChangePassword(false)}
-      >
-        <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
-          <Text
-            style={[styles.modalTitle, { color: colors.text }]}
-          >
-            Change Password
-          </Text>
-          <TextInput
-            secureTextEntry
-            placeholder="Current Password"
-            placeholderTextColor={colors.textSecondary}
-            value={oldPassword}
-            onChangeText={setOldPassword}
-            style={[
-              styles.input,
-              { borderColor: colors.textSecondary, color: colors.text },
-            ]}
-          />
-          <TextInput
-            secureTextEntry
-            placeholder="New Password"
-            placeholderTextColor={colors.textSecondary}
-            value={newPassword}
-            onChangeText={setNewPassword}
-            style={[
-              styles.input,
-              { borderColor: colors.textSecondary, color: colors.text },
-            ]}
-          />
-          <View style={styles.actionRow}>
-            <Button
-              title="Cancel"
-              onPress={() => setShowChangePassword(false)}
-              variant="outline"
-              size="large"
-              style={[
-                styles.cancelButton,
-                { borderColor: colors.textSecondary },
-              ]}
-              textStyle={{
-                color: colors.textSecondary,
-              }}
-            />
-            <Button
-              title={isSubmitting ? "Changing..." : "Confirm"}
-              onPress={handlePasswordChange}
-              disabled={isSubmitting}
-              variant="primary"
-              size="large"
-              style={{
-                backgroundColor: isSubmitting
-                  ? colors.textSecondary
-                  : colors.primary,
-              }}
-              textStyle={{
-                color: "#FFFFFF",
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowChangePassword(false)}
+        onSubmit={handlePasswordChange}
+        isSubmitting={isSubmitting}
+      />
     </View>
   );
 }
@@ -221,7 +207,6 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   avatarContainer: {
-    position: "relative",
     marginBottom: 16,
   },
   avatar: {
@@ -229,17 +214,6 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  editButton: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.3)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -253,7 +227,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    marginBottom: 10, // Added for proper spacing
   },
   infoText: {
     fontSize: 12,
@@ -263,62 +236,62 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 8,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    marginBottom: 12,
   },
-  changePasswordCard: {
-    padding: 16,
-    borderRadius: 10,
-    backgroundColor: "#FFFFFF", // Ensures contrast with text
-    elevation: 3, // Adds shadow effect
+  accountCard: {
+    padding: 0,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Background overlay with transparency
-    paddingHorizontal: 20,
-  },
-  modalTitle: {
-    fontSize: 22, // Slightly larger title font
-    fontWeight: "bold",
-    marginBottom: 24,
-    textAlign: "center",
-    color: "#FFFFFF", // Ensures visibility on dark backgrounds
-  },
-  actionRow: {
+  menuItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%", // Ensures buttons align properly
+    alignItems: "center",
+    padding: 16,
   },
-  toggleHistoryButton: {
-    paddingVertical: 10,
-    borderRadius: 6,
-    marginBottom: 16,
-    elevation: 2, // Adds slight shadow effect on the button
+  menuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.05)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
-  cancelButton: {
-    borderWidth: 2,
+  menuContent: {
     flex: 1,
-    marginRight: 8,
-    borderRadius: 8, // Rounded corners for consistent design
   },
-  logoutSection: {
+  menuTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  menuSubtitle: {
+    fontSize: 14,
+  },
+  historyButton: {
+    marginTop: 12,
+  },
+  historyContainer: {
+    marginTop: 16,
+  },
+  noHistory: {
+    textAlign: "center",
+    fontSize: 14,
+    marginTop: 20,
+  },
+  actionsSection: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+    marginTop: 20,
   },
   logoutButton: {
     borderWidth: 2,
-    borderRadius: 8,
+    borderRadius: 10,
   },
 });

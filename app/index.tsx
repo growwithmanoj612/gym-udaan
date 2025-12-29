@@ -2,54 +2,45 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useIsFocused } from "@react-navigation/native";
 import { Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
-
-// Import your auth store (create this first)
-// import { useAuth } from "@/store/useAuth";
+import { ActivityIndicator, Text, View } from "react-native";
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const isFocused = useIsFocused();
-  const { checkAuth, isAuthenticated, appUser } = useAuthStore();
+  const { checkAuth, isAuthenticated, appUser, isOffline } = useAuthStore();
 
-  // Simulate auth check - replace with your actual auth logic
-
-
-  // future ma change hunxa we will use flag
   const hasCompletedOnboarding = appUser?.fullName;
   const hasSelectedTenant = appUser?.businessDetailsId;
 
-
-
-
-
-
-
-
-  
-      useEffect(() => {
-    
-      checkAuth();
-    }, [isFocused]);
-
   useEffect(() => {
-    // Simulate checking auth state
-    const timeout = setTimeout(() => {
+    const performAuthCheck = async () => {
+      setIsLoading(true);
+      await checkAuth();
       setIsLoading(false);
-    }, 100);
-
-    return () => clearTimeout(timeout);
-  }, []);
+    };
+    if (isFocused) {
+      performAuthCheck();
+    }
+  }, [isFocused]);
 
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />
+        <Text style={{ marginTop: 10 }}>Checking authentication...</Text>
       </View>
     );
   }
 
-  // Redirect logic based on auth state
+  {
+    isOffline && (
+      <View style={{ backgroundColor: 'orange', padding: 10 }}>
+        <Text>You're offline. Connect to the internet for full features.</Text>
+      </View>
+    )
+  }
+
+  // Redirect logic
   if (!hasCompletedOnboarding) {
     return <Redirect href="/(auth)/getting-started" />;
   }
@@ -58,9 +49,11 @@ export default function Index() {
     return <Redirect href="/(auth)/tenant-select" />;
   }
 
-  if (!isAuthenticated) {
-    return <Redirect href="/(auth)/login" />;
+  // Allow access if authenticated, even offline
+  if (isAuthenticated) {
+    return <Redirect href="/(tabs)" />;
   }
 
-  return <Redirect href="/(tabs)" />;
+  // If not authenticated and not offline (or auth failed), redirect to login
+  return <Redirect href="/(auth)/login" />;
 }

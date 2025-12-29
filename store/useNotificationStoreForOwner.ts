@@ -4,6 +4,7 @@ import { axios_auth } from '@/global/config/axios.config';
 import { API_ENDPOINTS } from '@/global/endpoints/api-endpoints';
 import { createSelectors } from '@/global/utils/auto-selectors';
 import { toast } from '@/providers/toast-provider';
+import { PaginationPeriodReq } from '@/global/enums';
 
 export interface INotificationStore {
   // State
@@ -13,13 +14,16 @@ export interface INotificationStore {
   unreadCount: number;
   isLoading: boolean;
 
-  // Actions
-  fetchAll: () => Promise<void>;
+ 
    fetchPaginated: () => Promise<void>;
    
   markAsRead: (id:  number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   getUnreadCount: () => Promise<void>;  
+
+
+  paginationPeriodReq: PaginationPeriodReq
+  setPaginationPeriodReq: (period: PaginationPeriodReq) => void;
 }
 
 const useNotificationStoreBaseOwner = create<INotificationStore>((set, get) => ({
@@ -29,39 +33,13 @@ const useNotificationStoreBaseOwner = create<INotificationStore>((set, get) => (
   unreadNotifications: [],
   unreadCount: 0,
   isLoading: false,
-
-  // Actions
-  fetchAll: async () => {
-    set({ isLoading: true });
-    try {
-      const response = await axios_auth.get(API_ENDPOINTS.notificationsOwner.getAll);
-      
-      if (response?.data && response?. status === 200) {
-        const notifications = response?.data?.data;
-        // const unreadCount = notifications.filter((n:  INotificationDetails) => !n.isRead).length;
-        
-        set({
-          notifications,
-          // unreadCount,
-        });
-      }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to fetch notifications';
-      toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMessage,
-      });
-      throw error;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+  paginationPeriodReq: PaginationPeriodReq.RECENT_10_DATA,
+   
 
     fetchPaginated: async () => {
     set({ isLoading: true });
     try {
-      const response = await axios_auth.get(API_ENDPOINTS.notifications.getPageinated);
+      const response = await axios_auth.get(API_ENDPOINTS.notificationsOwner.getPageinated(get().paginationPeriodReq));
       
       if (response?.data && response?. status === 200) {
         const notifications = response?.data?.data;
@@ -159,7 +137,9 @@ const useNotificationStoreBaseOwner = create<INotificationStore>((set, get) => (
   },
 
  
-
+  setPaginationPeriodReq: (period: PaginationPeriodReq) => {
+    set({ paginationPeriodReq: period });
+  },
    
 }));
 

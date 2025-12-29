@@ -1,3 +1,5 @@
+import { PaginationPeriodReq } from "../enums";
+
 const authBase = "auth";
 const businessBase = "business";
 const memberBase = "members";
@@ -48,7 +50,7 @@ export const API_ENDPOINTS = {
     getUnreadCount: `${notificationBase}/get-unread-count`,
     getDietPlansNoti: `${notificationBase}/get-diet-plans-noti`,
 
-      getPageinated: `${notificationBase}/get-paginated`,
+      getPageinated:(period:PaginationPeriodReq)=> `${notificationBase}/get-paginated?period=${period}`,
 
   },
 
@@ -88,7 +90,8 @@ export const API_ENDPOINTS = {
     getUnreadCount: `${notificationBaseOwnwer}/get-unread-count`, 
 
 
-     getPageinated: `${notificationBaseOwnwer}/get-paginated`,
+       getPageinated:(period:PaginationPeriodReq)=> `${notificationBaseOwnwer}/get-paginated?period=${period}`,
+
 
   },
   biometric: {
