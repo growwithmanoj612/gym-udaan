@@ -3,8 +3,8 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 // http://192.168.16.102
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.1.101:9003/api/v1";
+// const API_BASE_URL =   process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.16.102:9003/api/v1";
+const API_BASE_URL =    "http://192.168.16.102:9003/api/v1";
 const API_TIMEOUT = 30000;
 
 // Token storage keys
