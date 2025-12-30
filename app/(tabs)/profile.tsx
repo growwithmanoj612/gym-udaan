@@ -25,7 +25,7 @@ export default function Profile() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  const { logout, appUser, changePassword } = useAuthStore();
+  const { logout, appUser, changePassword, selectedTenantName } = useAuthStore();
   const { currentMembership, fetchAll, memberships } = useMembershipStore();
 
   const [showHistory, setShowHistory] = useState(false);
@@ -83,11 +83,18 @@ export default function Profile() {
                 <Ionicons name="person" size={40} color="#FFFFFF" />
               </View>
             </View>
+      
             <Text style={styles.userName}>{appUser?.fullName}</Text>
             <View style={styles.infoItem}>
               <Ionicons name="call" size={14} color="rgba(255,255,255,0.9)" />
               <Text style={styles.infoText}>{appUser?.phone}</Text>
             </View>
+            {selectedTenantName && (
+              <View style={styles.infoItem}>
+                <Ionicons name="business" size={14} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.infoText}>{selectedTenantName}</Text>
+              </View>
+            )}
           </View>
         </AnimatedCard>
 

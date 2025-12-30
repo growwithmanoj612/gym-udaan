@@ -1,4 +1,4 @@
-import { useAuthStore } from "@/store/useAuthStore";
+import { ONBOARDING_KEY, TENANT_KEY, useAuthStore } from "@/store/useAuthStore";
 import { useIsFocused } from "@react-navigation/native";
 import { Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -7,14 +7,12 @@ import { ActivityIndicator, Text, View } from "react-native";
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const isFocused = useIsFocused();
-  const { checkAuth, isAuthenticated, appUser, isOffline } = useAuthStore();
-
-  const hasCompletedOnboarding = appUser?.fullName;
-  const hasSelectedTenant = appUser?.businessDetailsId;
+  const { checkAuth, isAuthenticated, isOffline, selectedTenantId, hasCompletedOnboarding, loadPersistedState } = useAuthStore();
 
   useEffect(() => {
     const performAuthCheck = async () => {
       setIsLoading(true);
+      await loadPersistedState(); // Load onboarding and tenant from storage
       await checkAuth();
       setIsLoading(false);
     };
@@ -32,12 +30,12 @@ export default function Index() {
     );
   }
 
-  {
-    isOffline && (
+  if (isOffline) {
+    return (
       <View style={{ backgroundColor: 'orange', padding: 10 }}>
         <Text>You're offline. Connect to the internet for full features.</Text>
       </View>
-    )
+    );
   }
 
   // Redirect logic
@@ -45,7 +43,7 @@ export default function Index() {
     return <Redirect href="/(auth)/getting-started" />;
   }
 
-  if (!hasSelectedTenant) {
+  if (!selectedTenantId) {
     return <Redirect href="/(auth)/tenant-select" />;
   }
 

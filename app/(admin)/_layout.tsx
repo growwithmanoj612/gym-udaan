@@ -53,7 +53,7 @@ export default function TabLayout() {
           title: "Message",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "notifications" : "notifications-outline"}
+             name={focused ? "chatbubbles-outline" : "chatbubbles"}
               size={24}
               color={color}
             />

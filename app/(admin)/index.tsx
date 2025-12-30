@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
+  
   Modal,
   ScrollView,
   StyleSheet,
@@ -30,7 +30,7 @@ import MessageModal from "../component/message-card-modal";
 import MessageCard from "../component/message-card";
 
 const AnimatedCard = Animated.createAnimatedComponent(Card);
-const { width } = Dimensions.get("window");
+
 
 export default function Home() {
   const router = useRouter();
@@ -40,6 +40,8 @@ export default function Home() {
 
   // Stores
   const appUser = useAuthStore((state) => state.appUser);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+ 
   const { notifications, unreadCount, isLoading, fetchPaginated, getUnreadCount ,markAsRead} = useNotificationStoreOwner();
   const { biometrics, getBiometrics, doorUnlock } = useBiometricStore();
 
@@ -69,6 +71,7 @@ export default function Home() {
   useEffect(() => {
  
     getBiometrics();
+    checkAuth()
   }, []);
 
 

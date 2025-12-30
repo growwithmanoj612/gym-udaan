@@ -24,7 +24,7 @@ export default function Profile() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  const { logout, appUser, changePassword } = useAuthStore();
+  const { logout, appUser, changePassword, selectedTenantName } = useAuthStore();
 
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,6 +87,13 @@ export default function Profile() {
             </View>
             <View style={styles.roleBadge}>
               <Text style={styles.roleText}>Administrator</Text>
+
+              {selectedTenantName && (
+                            <View style={styles.infoItem}>
+                              <Ionicons name="business" size={14} color="rgba(255,255,255,0.9)" />
+                              <Text style={styles.infoText}>{selectedTenantName}</Text>
+                            </View>
+                          )}
             </View>
           </View>
         </AnimatedCard>

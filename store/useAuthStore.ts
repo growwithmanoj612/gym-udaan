@@ -8,9 +8,10 @@ import { createSelectors } from '@/global/utils/auto-selectors';
 import { IAuthStore } from '@/interfaces/auth.interface';
 import { toast } from '@/providers/toast-provider';
 
-const ONBOARDING_KEY = '@gym_udaan_onboarding';
-const TENANT_KEY = '@gym_udaan_tenant';
-const APP_USER_KEY = '@gym_udaan_app_user';  // New key for persisting appUser
+export const ONBOARDING_KEY = '@gym_udaan_onboarding';
+export const TENANT_KEY = '@gym_udaan_tenant';
+export const TENANT_NAME_KEY = '@gym_udaan_tenant_name';
+export const APP_USER_KEY = '@gym_udaan_app_user';  // New key for persisting appUser
 
 const defaultAppUser: IAppUserMemberDetails = {
   id: 0,
@@ -28,6 +29,7 @@ const useAuthStoreBase = create<IAuthStore>((set, get) => ({
   isLoading: false,
   hasCompletedOnboarding: false,
   selectedTenantId: null,
+  selectedTenantName: null,
   token: null,
   isOffline: false,  // Added isOffline to state
 
@@ -156,7 +158,7 @@ const useAuthStoreBase = create<IAuthStore>((set, get) => ({
       }
 
       // Validate with backend
-      const response = await axios_auth.get(API_ENDPOINTS.auth.check(token));
+      const response = await axios_auth.get(API_ENDPOINTS.auth.check(token, (get().selectedTenantId || "0")));
 
       if (response?.data && response?.status === 200) {
         const { token: newToken, refreshToken: newRefreshToken, appUser } = response.data.data;
@@ -184,6 +186,16 @@ const useAuthStoreBase = create<IAuthStore>((set, get) => ({
           text2: 'You are offline. Some features may be limited.',
         });
       } else {
+
+
+
+const errorMessage = error.response?.data?.message || 'Authentication failed.';
+      toast.show({
+        type: 'error',
+        text1: 'Authentication Failed',
+        text2: errorMessage,
+      });
+
         // Auth or other error - force logout
         await get().clearAppUser();
         await tokenManager.removeTokens();
@@ -194,6 +206,17 @@ const useAuthStoreBase = create<IAuthStore>((set, get) => ({
     }
   },
 
+  loadPersistedState: async () => {
+    const onboarding = await AsyncStorage.getItem(ONBOARDING_KEY);
+    const tenant = await AsyncStorage.getItem(TENANT_KEY);
+    const tenantName = await AsyncStorage.getItem(TENANT_NAME_KEY);
+    set({
+      hasCompletedOnboarding: onboarding === 'true',
+      selectedTenantId: tenant,
+      selectedTenantName: tenantName
+    });
+  },
+
   completeOnboarding: async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     set({ hasCompletedOnboarding: true });
@@ -202,6 +225,10 @@ const useAuthStoreBase = create<IAuthStore>((set, get) => ({
   selectTenant: async (tenantId: string) => {
     await AsyncStorage.setItem(TENANT_KEY, tenantId);
     set({ selectedTenantId: tenantId });
+  },
+  selectTenantName: async (tenantName: string) => {
+    await AsyncStorage.setItem(TENANT_NAME_KEY, tenantName);
+    set({ selectedTenantName: tenantName });
   },
 
   setToken: async (token: string) => {

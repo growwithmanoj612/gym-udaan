@@ -30,6 +30,7 @@ export default function Login() {
   const isLoading = useAuthStore((state) => state.isLoading);
   const selectedTenantId = useAuthStore((state) => state.selectedTenantId);
   const selectTenant = useAuthStore((state) => state.selectTenant);
+  const selectedTenantName = useAuthStore((state) => state.selectedTenantName);
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
@@ -40,10 +41,10 @@ export default function Login() {
     let valid = true;
     const newErrors = { phone: "", password: "" };
 
-    if (!phoneNumber || phoneNumber.length < 10) {
-      newErrors.phone = "Please enter a valid phone number";
-      valid = false;
-    }
+    // if (!phoneNumber || phoneNumber.length < 10) {
+    //   newErrors.phone = "Please enter a valid phone number";
+    //   valid = false;
+    // }
 
     // if (!password || password.length < 6) {
     //   newErrors.password = "Password must be at least 6 characters";
@@ -59,16 +60,19 @@ export default function Login() {
 
     if (!selectedTenantId) {
       const tenantId = await AsyncStorage.getItem(TENANT_KEY) || "";
-      selectTenant(tenantId);
-      // setErrors({ ...errors, phone: "Please select a gym first" });
-      return;
+      if (tenantId) {
+        selectTenant(tenantId);
+      } else {
+        setErrors({ ...errors, phone: "Please select a gym first" });
+        return;
+      }
     }
 
     try {
       const role = await login({
         userName: phoneNumber,
         password,
-        businessDetailsId: parseInt(selectedTenantId)
+        businessDetailsId: parseInt(selectedTenantId!)
       });
 
       if (role) {
@@ -106,6 +110,10 @@ export default function Login() {
     );
   };
 
+  const handleChangeGym = () => {
+    router.push("/(auth)/tenant-select");
+  };
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -131,8 +139,16 @@ export default function Login() {
             Welcome Back
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Login to continue your fitness journey
+            Login  to continue fitness journey on {selectedTenantName ? selectedTenantName : "your gym"}
           </Text>
+          {selectedTenantId && (
+            <TouchableOpacity onPress={handleChangeGym} style={styles.changeGymButton}>
+              <Ionicons name="swap-horizontal" size={16} color={colors.primary} />
+              <Text style={[styles.changeGymText, { color: colors.primary }]}>
+                Change Gym
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Login Form */}
@@ -218,6 +234,17 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     textAlign: "center",
+  },
+  changeGymButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    padding: 8,
+  },
+  changeGymText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 4,
   },
   form: {
     flex: 1,

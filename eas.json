@@ -7,18 +7,27 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
       "android": {
         "gradleCommand": ":app:assembleDebug"
       }
     },
     "preview": {
       "distribution": "internal",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
       "android": {
         "gradleCommand": ":app:assembleRelease"
       }
     },
     "production": {
       "autoIncrement": true,
+      "ios": {
+        "resourceClass": "m-medium"
+      },
       "android": {
         "gradleCommand": ":app:assembleRelease"
       }

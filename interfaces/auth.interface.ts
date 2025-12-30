@@ -8,6 +8,7 @@ export interface IAuthStore {
   isLoading: boolean;
   hasCompletedOnboarding: boolean;
   selectedTenantId: string | null;
+  selectedTenantName: string | null;
   token: string | null;
   isOffline : boolean
 
@@ -20,9 +21,11 @@ export interface IAuthStore {
   checkAuth: () => Promise<void>;
   completeOnboarding: () => void;
   selectTenant: (tenantId:  string) => void;
+  selectTenantName: (tenantName:  string) => void;
   
   // Token management
   setToken: (token: string) => Promise<void>;
   getToken:  () => Promise<string | null>;
   removeToken: () => Promise<void>;
+   loadPersistedState: () => Promise<void>
 }

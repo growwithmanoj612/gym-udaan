@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
+import { IBusinessDetails } from "@/global/interfaces";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useBusinessStore } from "@/store/useBusinessStore";
@@ -24,6 +25,7 @@ export default function TenantSelect() {
 
   // ✅ Zustand stores with standard selectors
   const selectTenant = useAuthStore((state) => state.selectTenant);
+  const selectTenantName = useAuthStore((state) => state.selectTenantName);
   const gyms = useBusinessStore((state) => state.businessDetails);
   const fetchGyms = useBusinessStore((state) => state.fetchBusinessDetails);
   const isLoading = useBusinessStore((state) => state.isLoading);
@@ -41,8 +43,13 @@ export default function TenantSelect() {
       .includes(searchQuery.toLowerCase())
   );
 
-  const handleSelectGym = async (gymId: string) => {
-    await selectTenant(gymId);
+  const handleSelectGym = async (gym: IBusinessDetails) => {
+    await selectTenant(gym?.id?.toString());
+
+    if(gym?.businessName){
+
+      await selectTenantName(gym?.businessName?.replaceAll("_"," "))
+    }
     router.replace("/(auth)/login");
   };
 
@@ -106,7 +113,7 @@ export default function TenantSelect() {
             filteredGyms.map((gym) => (
               <TouchableOpacity
                 key={gym?.id}
-                onPress={() => handleSelectGym(gym?.id?.toString())}
+                onPress={() => handleSelectGym(gym)}
                 activeOpacity={0.7}
               // disabled={gym?.status !== 'ACTIVE'}
               >

@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  Modal,
+ 
   ScrollView,
   StyleSheet,
   Text,
@@ -42,7 +42,8 @@ export default function Home() {
   const isFocused = useIsFocused();
 
   // Stores
-  const appUser = useAuthStore.use.appUser();
+  const appUser = useAuthStore((state) => state.appUser);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
   const { notifications, unreadCount, isLoading, fetchPaginated, getUnreadCount, markAsRead } = useNotificationStore();
   const { currentMembership, fetchCurrentMembership } = useMembershipStore();
 
@@ -69,6 +70,7 @@ export default function Home() {
   useEffect(() => {
 
     fetchCurrentMembership();
+    checkAuth()
   }, []);
 
 

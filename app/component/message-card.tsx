@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 interface MessageCardProps {
   notification: INotificationDetails;
@@ -108,108 +109,153 @@ export default function MessageCard({ notification, onPress }: MessageCardProps)
   };
 
   return (
-    <Card
-      elevated
-      style={[
-        styles.notificationCard,
-        !notification.isRead && {
-          backgroundColor: `${colors.primary}08`,
-          borderLeftWidth: 4,
-          borderLeftColor: colors.primary,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        onPress={() => onPress(notification)}
-        activeOpacity={0.7}
+    <Animated.View entering={FadeInUp.delay(100).springify()}>
+      <Card
+        elevated
+        style={[
+          styles.notificationCard,
+          !notification.isRead && {
+            backgroundColor: `${colors.primary}10`,
+            borderLeftWidth: 6,
+            borderLeftColor: colors.primary,
+            shadowColor: colors.primary,
+            shadowOpacity: 0.3,
+            elevation: 8,
+          },
+        ]}
       >
-        <View style={styles.notificationContent}>
-          <View
-            style={[
-              styles.iconContainer,
-              {
-                backgroundColor: `${getTypeColor(notification.type)}20`,
-              },
-            ]}
-          >
-            <Ionicons
-              name={getNotificationIcon(notification.type) as any}
-              size={24}
-              color={getTypeColor(notification.type)}
-            />
-          </View>
-
-          <View style={styles.textContainer}>
-            <View style={styles.headerRow}>
-              <Text
-                style={[
-                  styles.title,
-                  { color: colors.text },
-                  !notification.isRead && styles.unreadTitle,
-                ]}
-                numberOfLines={1}
-              >
-                {notification.type.replace(/_/g, ' ')}
-              </Text>
+        <TouchableOpacity
+          onPress={() => onPress(notification)}
+          activeOpacity={0.7}
+          style={styles.touchable}
+        >
+          <View style={styles.notificationContent}>
+            <View
+              style={[
+                styles.iconContainer,
+                {
+                  backgroundColor: `${getTypeColor(notification.type)}20`,
+                  borderWidth: !notification.isRead ? 2 : 0,
+                  borderColor: !notification.isRead ? colors.primary : 'transparent',
+                },
+              ]}
+            >
+              <Ionicons
+                name={getNotificationIcon(notification.type) as any}
+                size={26}
+                color={getTypeColor(notification.type)}
+              />
               {!notification.isRead && (
                 <View
                   style={[
-                    styles.unreadDot,
+                    styles.unreadBadge,
                     { backgroundColor: colors.primary },
                   ]}
-                />
+                >
+                  <Text style={styles.unreadBadgeText}>!</Text>
+                </View>
               )}
             </View>
 
-            <Text
-              style={[
-                styles.message,
-                { color: colors.textSecondary },
-              ]}
-              numberOfLines={3}
-            >
-              {notification.message}
-            </Text>
-
-            <View style={styles.footer}>
-              <Text
-                style={[styles.date, { color: colors.textTertiary }]}
-              >
-                {new Date(notification.createdDate).toLocaleString(
-                  "en-US",
-                  {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }
+            <View style={styles.textContainer}>
+              <View style={styles.headerRow}>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: colors.text },
+                    !notification.isRead && styles.unreadTitle,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {notification.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                </Text>
+                {!notification.isRead && (
+                  <View
+                    style={[
+                      styles.unreadDot,
+                      { backgroundColor: colors.primary },
+                    ]}
+                  />
                 )}
+              </View>
+
+              <Text
+                style={[
+                  styles.message,
+                  { color: colors.textSecondary },
+                  !notification.isRead && { fontWeight: '500' },
+                ]}
+                numberOfLines={3}
+              >
+                {notification.message}
               </Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+
+              <View style={styles.footer}>
+                <Text
+                  style={[styles.date, { color: colors.textTertiary }]}
+                >
+                  {new Date(notification.createdDate).toLocaleString(
+                    "en-US",
+                    {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )}
+                </Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              </View>
             </View>
           </View>
-        </View>
-      </TouchableOpacity>
-    </Card>
+        </TouchableOpacity>
+      </Card>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   notificationCard: {
-    marginBottom: 12,
-    padding: 16,
-    borderRadius: 16,
+    marginBottom: 16,
+    padding: 20,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  touchable: {
+    borderRadius: 20,
   },
   notificationContent: {
     flexDirection: "row",
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: 16,
+    position: 'relative',
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  unreadBadgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   textContainer: {
     flex: 1,
@@ -217,26 +263,27 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   title: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
     flex: 1,
   },
   unreadTitle: {
-    fontWeight: "700",
+    fontWeight: "800",
+    color: '#000', // Ensure contrast
   },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     marginLeft: 8,
   },
   message: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 8,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 10,
   },
   footer: {
     flexDirection: "row",
@@ -244,6 +291,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   date: {
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '400',
   },
 });

@@ -1,4 +1,3 @@
-// app/(tabs)/profile.tsx
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
@@ -7,7 +6,7 @@ import { IMemberShipDetails } from "@/global/interfaces";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useMembershipStore } from "@/store/useMembershipStore";
- 
+
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
@@ -22,79 +21,63 @@ import Animated, {
   FadeInUp,
   Layout,
 } from "react-native-reanimated";
- 
 
-export default function MembershipCard({membership}:{membership:IMemberShipDetails}) {
-  
+export default function MembershipCard({ membership }: { membership: IMemberShipDetails }) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  
- 
-
-  {/* Membership Card */}
   return (
-    
-          <Animated.View
-            entering={FadeInDown.delay(300).springify()}
-            style={styles.section}
-          >
-       
-            <Card elevated style={styles.membershipCard}>
-              <View style={styles.membershipHeader}>
-                <View style={{ flex: 1 }}>
-                  <View style={styles.membershipBadge}>
-                    <Text style={styles.membershipBadgeText}>{membership?.memberShipStatus}</Text>
-                  </View>
-                  <Text
-                    style={[styles.membershipTitle, { color: colors.text }]}
-                  >
-                    {membership.planName}
-                  </Text>
-
-                  <Text>
-                    Started on: {membership?.membershipStartDate}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.membershipDate,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Expires on {membership.membershipEndDate}
-                  </Text>
-                </View>
-                <View style={styles.membershipPrice}>
-                  <Text style={[styles.daysLeft, { color: colors.primary }]}>
-                    {membership.remainingDays}
-                  </Text>
-                  <Text
-                    style={[styles.daysLabel, { color: colors.textSecondary }]}
-                  >
-                    Days Left
-                  </Text>
-                </View>
-              </View>
-
+    <Animated.View
+      entering={FadeInDown.delay(300).springify()}
+      style={styles.section}
+    >
+      <Card elevated style={styles.membershipCard}>
+        <View style={styles.membershipHeader}>
+          <View style={{ flex: 1 }}>
+            <View style={styles.membershipBadge}>
+              <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
+              <Text style={styles.membershipBadgeText}>{membership?.memberShipStatus}</Text>
+            </View>
+            <Text style={[styles.membershipTitle, { color: colors.text }]}>
+              {membership.planName}
+            </Text>
+            <View style={styles.dateContainer}>
+              <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+              <Text style={[styles.dateText, { color: colors.textSecondary }]}>
+                Started: {membership?.membershipStartDate}
+              </Text>
+            </View>
+            <View style={styles.dateContainer}>
+              <Ionicons name="time-outline" size={16} color={colors.error || '#FF6B6B'} />
+              <Text style={[styles.dateText, { color: colors.textSecondary }]}>
+                Expires: {membership.membershipEndDate}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.membershipPrice}>
+            <Text style={[styles.daysLeft, { color: colors.primary }]}>
+              {membership.remainingDays}
+            </Text>
+            <Text style={[styles.daysLabel, { color: colors.textSecondary }]}>
+              Days Left
+            </Text>
+            {/* Optional: Add a progress indicator */}
+            <View style={styles.progressBar}>
               <View
-                style={[styles.divider, { backgroundColor: colors.border }]}
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${Math.max(0, (membership.remainingDays / 30) * 100)}%`, // Assuming 30-day cycle, adjust as needed
+                    backgroundColor: colors.primary,
+                  },
+                ]}
               />
-
-              <View style={styles.priceRow}>
-                <Text
-                  style={[styles.priceLabel, { color: colors.textSecondary }]}
-                >
-                  Membership Price
-                </Text>
-                <Text style={[styles.priceValue, { color: colors.text }]}>
-                  ₹{membership.price}
-                </Text>
-              </View>
-
-             
-            </Card>
-          </Animated.View>
-        
+            </View>
+          </View>
+        </View>
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+      </Card>
+    </Animated.View>
   );
 }
 
@@ -182,6 +165,12 @@ const styles = StyleSheet.create({
   },
   membershipCard: {
     padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   membershipHeader: {
     flexDirection: "row",
@@ -189,64 +178,63 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   membershipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: "#10B981",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
     alignSelf: "flex-start",
-    marginBottom: 8,
+    marginBottom: 12,
+    gap: 4,
   },
   membershipBadgeText: {
     color: "#FFFFFF",
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "bold",
   },
   membershipTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 12,
+    lineHeight: 24,
   },
-  membershipDate: {
-    fontSize: 13,
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    gap: 6,
+  },
+  dateText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   membershipPrice: {
-    alignItems: "flex-end",
+    alignItems: "center",
   },
   daysLeft: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "bold",
+    marginBottom: 4,
   },
   daysLabel: {
-    fontSize: 12,
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  progressBar: {
+    width: 80,
+    height: 4,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
   },
   divider: {
     height: 1,
-    marginVertical: 16,
-  },
-  priceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  priceLabel: {
-    fontSize: 14,
-  },
-  priceValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  facilitiesTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  facilityItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
-  },
-  facilityText: {
-    fontSize: 14,
+    marginVertical: 20,
   },
   menuCard: {
     marginBottom: 12,
