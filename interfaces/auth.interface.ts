@@ -12,6 +12,8 @@ export interface IAuthStore {
   token: string | null;
   isOffline : boolean
 
+
+
   // Actions
   setAppUser: (user: IAppUserMemberDetails) => void;
   clearAppUser: () => void;
@@ -22,6 +24,7 @@ export interface IAuthStore {
   completeOnboarding: () => void;
   selectTenant: (tenantId:  string) => void;
   selectTenantName: (tenantName:  string) => void;
+  clearSelectTenant: () => void;
   
   // Token management
   setToken: (token: string) => Promise<void>;

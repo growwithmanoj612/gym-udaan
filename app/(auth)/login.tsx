@@ -31,6 +31,7 @@ export default function Login() {
   const selectedTenantId = useAuthStore((state) => state.selectedTenantId);
   const selectTenant = useAuthStore((state) => state.selectTenant);
   const selectedTenantName = useAuthStore((state) => state.selectedTenantName);
+  const clearSelectTenant = useAuthStore((state) => state.clearSelectTenant);
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
@@ -135,7 +136,10 @@ export default function Login() {
             <Ionicons name="barbell" size={40} color="#FFFFFF" />
           </LinearGradient>
 
-          <Text style={[styles.title, { color: colors.text }]}>
+          <Text style={[styles.title, { color: colors.text }]}
+          
+          onPress={()=>router.replace("/(auth)/getting-started")}
+          >
             Welcome Back
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>

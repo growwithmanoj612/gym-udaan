@@ -244,6 +244,11 @@ const errorMessage = error.response?.data?.message || 'Authentication failed.';
     await tokenManager.removeTokens();
     set({ token: null });
   },
+  clearSelectTenant: async () => {
+    await AsyncStorage.removeItem(ONBOARDING_KEY)
+ 
+    set({hasCompletedOnboarding:false });
+  }
 }));
 
 export const useAuthStore = createSelectors(useAuthStoreBase);

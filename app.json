@@ -1,31 +1,46 @@
 {
   "expo": {
     "name": "gym udaan",
-    "slug": "gym udaan",
+    "slug": "gym-udaan",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "gymudaan",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.niroj.gymudaan",
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "remote-notification",
-          "remote-notification"
-        ],
-        "ITSAppUsesNonExemptEncryption": false
-      },
-      "entitlements": {
+   
+
+
+"ios": {
+  "supportsTablet": true,
+  "bundleIdentifier": "com.niroj.gymudaan",
+  "infoPlist": {
+    "UIBackgroundModes": [
+      "remote-notification"
+    ],
+    "ITSAppUsesNonExemptEncryption": false,
+
+    "NSAppTransportSecurity": {
+      "NSAllowsArbitraryLoads": false,
+      "NSExceptionDomains": {
+        "69.62.77.89": {
+          "NSExceptionAllowsInsecureHTTPLoads": true,
+          "NSIncludesSubdomains": true
+        }
+      }
+    }
+  },
+
+   "entitlements": {
         "aps-environment": "development",
         "com.apple.security.application-groups": [
-          "group.com.niroj.gymudaan.onesignal",
           "group.com.niroj.gymudaan.onesignal"
         ]
       }
-    },
+},
+
+
+
     "android": {
       "package": "com.niroj.gymudaan",
       "googleServicesFile": "./google-services.json",
