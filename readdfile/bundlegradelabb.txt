@@ -9,3 +9,18 @@ bundle {
         enableSplit = false
     }
 }
+
+signingConfigs {
+    debug {
+        storeFile file('debug.keystore')
+        storePassword 'android'
+        keyAlias 'androiddebugkey'
+        keyPassword 'android'
+    }
+    release {
+        storeFile file('release.keystore')
+        storePassword 'hansel123'
+        keyAlias 'release'
+        keyPassword 'hansel123'
+    }
+}
