@@ -50,9 +50,8 @@
       "permissions": [
         "INTERNET"
       ],
-      "usesCleartextTraffic": true,
-      "networkSecurityConfig": "./android/app/src/main/res/xml/network_security_config.xml"
-    },
+      "usesCleartextTraffic": true
+        },
     "web": {
       "output": "static",
       "favicon": "./assets/icon.png"
