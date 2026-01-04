@@ -50,8 +50,9 @@
       "permissions": [
         "INTERNET"
       ],
-      "usesCleartextTraffic": true
-        },
+      "usesCleartextTraffic": true,
+      "networkSecurityConfig": "./assets/xml/network_security_config.xml"
+    },
     "web": {
       "output": "static",
       "favicon": "./assets/icon.png"
