@@ -29,7 +29,7 @@ const useBusinessStoreBase = create<IBusinessStore>((set) => ({
         set({ businessDetails:  response.data.data });
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to fetch business details and '  + error;
+      const errorMessage = error.response?.data?.message ||  error;
       toast.show({
         type: 'error',
         text1: 'Error',

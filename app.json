@@ -8,43 +8,34 @@
     "scheme": "gymudaan",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-   
-
-
-"ios": {
-  "supportsTablet": true,
-  "bundleIdentifier": "com.niroj.gymudaan",
-  "infoPlist": {
-    "UIBackgroundModes": [
-      "remote-notification"
-    ],
-    "ITSAppUsesNonExemptEncryption": false,
-
-    "NSAppTransportSecurity": {
-      "NSAllowsArbitraryLoads": false,
-      "NSExceptionDomains": {
-        "69.62.77.89": {
-          "NSExceptionAllowsInsecureHTTPLoads": true,
-          "NSIncludesSubdomains": true
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.niroj.gymudaan",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "69.62.77.89": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
         }
-      }
-    }
-  },
-
-   "entitlements": {
+      },
+      "entitlements": {
         "aps-environment": "development",
         "com.apple.security.application-groups": [
           "group.com.niroj.gymudaan.onesignal"
         ]
       }
-},
-
-
-
+    },
     "android": {
       "package": "com.niroj.gymudaan",
       "googleServicesFile": "./google-services.json",
-    
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -52,6 +43,10 @@
       ],
       "usesCleartextTraffic": true,
       "networkSecurityConfig": "./assets/xml/network_security_config.xml"
+    },
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/icon.png",
+      "backgroundColor": "#000000"
     },
     "web": {
       "output": "static",
