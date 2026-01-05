@@ -6,35 +6,50 @@ import { useNotificationStore } from "@/store/useNotificationStore";
 import { Ionicons, Octicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
-import { Platform, Text, View } from "react-native"; 
+import { Platform, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = Colors[colorScheme ??  "light"];
   const unreadCount = useNotificationStore((state) => state.unreadCount);
   const { isOffline } = useAuthStore();
+  const insets = useSafeAreaInsets();
+
+  // Calculate the tab bar height based on platform and safe area insets
+  const tabBarHeight = Platform. select({
+    ios: 88,
+    android:  60 + insets.bottom, // Add bottom inset for Android navigation bar
+    default: 68,
+  });
+
+  const tabBarPaddingBottom = Platform.select({
+    ios: 28,
+    android: Math.max(insets.bottom, 8), // Use bottom inset or minimum padding
+    default: 12,
+  });
 
   return (
     <View style={{ flex: 1 }}>
       {isOffline && (
         <View style={{ backgroundColor: 'orange', padding: 10, alignItems: 'center' }}>
           <Text style={{ color: 'white', fontWeight: 'bold' }}>
-            You're offline. Connect to the internet for full features.
+            You're offline.  Connect to the internet for full features.
           </Text>
         </View>
       )}
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.textTertiary,
+          tabBarInactiveTintColor:  colors.textTertiary,
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarStyle: {
             backgroundColor: colors.card,
             borderTopColor: colors.border,
             borderTopWidth: 1,
-            height: Platform.OS === "ios" ? 88 : 68,
-            paddingBottom: Platform.OS === "ios" ? 28 : 12,
+            height: tabBarHeight,
+            paddingBottom: tabBarPaddingBottom,
             paddingTop: 8,
           },
           tabBarLabelStyle: {
@@ -56,20 +71,18 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen
+        <Tabs. Screen
           name="message"
           options={{
             title: "Message",
             tabBarIcon: ({ color, focused }) => (
-         
-
               <Ionicons
                 name={focused ? "chatbubbles-outline" : "chatbubbles"}
                 size={24}
                 color={color}
               />
             ),
-            tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+            tabBarBadge: unreadCount > 0 ?  unreadCount : undefined,
           }}
         />
         <Tabs.Screen
@@ -91,7 +104,7 @@ export default function TabLayout() {
             title: "Check-in",
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
-                name={focused ? "checkmark-circle" : "checkmark-circle-outline"}
+                name={focused ? "checkmark-circle" :  "checkmark-circle-outline"}
                 size={28}
                 color={color}
               />

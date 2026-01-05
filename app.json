@@ -2,7 +2,7 @@
   "expo": {
     "name": "gym udaan",
     "slug": "gym-udaan",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "gymudaan",
@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.niroj.gymudaan",
+      "bundleIdentifier": "com.niroj.gymudaan1",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
@@ -29,11 +29,12 @@
       "entitlements": {
         "aps-environment": "development",
         "com.apple.security.application-groups": [
-          "group.com.niroj.gymudaan.onesignal"
+          "group.com.niroj.gymudaan1.onesignal"
         ]
       }
     },
     "android": {
+      "versionCode": 9,
       "package": "com.niroj.gymudaan",
       "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
@@ -84,10 +85,10 @@
               "appExtensions": [
                 {
                   "targetName": "OneSignalNotificationServiceExtension",
-                  "bundleIdentifier": "com.niroj.gymudaan.OneSignalNotificationServiceExtension",
+                  "bundleIdentifier": "com.niroj.gymudaan1.OneSignalNotificationServiceExtension",
                   "entitlements": {
                     "com.apple.security.application-groups": [
-                      "group.com.niroj.gymudaan.onesignal"
+                      "group.com.niroj.gymudaan1.onesignal"
                     ]
                   }
                 }
