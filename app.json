@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "gym udaan",
-    "slug": "gym-udaan",
+    "name":  "gym udaan",
+    "slug":  "gym-udaan",
     "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,29 +11,33 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.niroj.gymudaan1",
+      "buildNumber": "2",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
         ],
         "ITSAppUsesNonExemptEncryption": false,
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": false,
+        "NSLocationWhenInUseUsageDescription": "This app does not use your location.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app does not use your location.",
+        "NSLocationAlwaysUsageDescription": "This app does not use your location.",
+        "NSAppTransportSecurity":  {
+          "NSAllowsArbitraryLoads":  false,
           "NSExceptionDomains": {
             "69.62.77.89": {
               "NSExceptionAllowsInsecureHTTPLoads": true,
-              "NSIncludesSubdomains": true
+              "NSIncludesSubdomains":  true
             }
           }
         }
       },
-      "entitlements": {
+      "entitlements":  {
         "aps-environment": "development",
-        "com.apple.security.application-groups": [
+        "com.apple.security.application-groups":  [
           "group.com.niroj.gymudaan1.onesignal"
         ]
       }
     },
-    "android": {
+    "android":  {
       "versionCode": 10,
       "package": "com.niroj.gymudaan",
       "googleServicesFile": "./google-services.json",
@@ -68,7 +72,7 @@
         {
           "image": "./assets/icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#000000"
+          "backgroundColor":  "#000000"
         }
       ]
     ],
@@ -76,15 +80,15 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "extra": {
+    "extra":  {
       "router": {},
       "eas": {
         "build": {
-          "experimental": {
+          "experimental":  {
             "ios": {
               "appExtensions": [
                 {
-                  "targetName": "OneSignalNotificationServiceExtension",
+                  "targetName":  "OneSignalNotificationServiceExtension",
                   "bundleIdentifier": "com.niroj.gymudaan1.OneSignalNotificationServiceExtension",
                   "entitlements": {
                     "com.apple.security.application-groups": [

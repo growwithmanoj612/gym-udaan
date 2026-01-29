@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  
+  Linking,
   Modal,
   ScrollView,
   StyleSheet,
@@ -30,36 +30,33 @@ import MessageModal from "../component/message-card-modal";
 import MessageCard from "../component/message-card";
 
 const AnimatedCard = Animated.createAnimatedComponent(Card);
-
+const softwareLink = 'https://www.gymudaan.com/tenant/add';
 
 export default function Home() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-     const isFocused = useIsFocused();
+  const isFocused = useIsFocused();
 
   // Stores
   const appUser = useAuthStore((state) => state.appUser);
   const checkAuth = useAuthStore((state) => state.checkAuth);
  
-  const { notifications, unreadCount, isLoading, fetchPaginated, getUnreadCount ,markAsRead} = useNotificationStoreOwner();
+  const { notifications, unreadCount, isLoading, fetchPaginated, getUnreadCount, markAsRead } = useNotificationStoreOwner();
   const { biometrics, getBiometrics, doorUnlock } = useBiometricStore();
 
   // Modal state
   const [selectedMessage, setSelectedMessage] = useState<INotificationDetails | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  // Unlock States
-  const [unlockCountdown, setUnlockCountdown] = useState<number | null>(null);
-  const [showUnlockOverlay, setShowUnlockOverlay] = useState(false);
-  const [unlockMessage, setUnlockMessage] = useState<string>("");
+ 
 
- const openMessageModal = async(message: INotificationDetails) => {
+  const openMessageModal = async (message: INotificationDetails) => {
     setSelectedMessage(message);
     setIsModalVisible(true);
  
     if (!message.isRead) {
-     await markAsRead(message.id);
+      await markAsRead(message.id);
     }
   };
 
@@ -69,11 +66,9 @@ export default function Home() {
   };
 
   useEffect(() => {
- 
     getBiometrics();
-    checkAuth()
+    checkAuth();
   }, []);
-
 
   // Re-fetch notifications and unread count on focus
   useEffect(() => {
@@ -81,41 +76,35 @@ export default function Home() {
     getUnreadCount();
   }, [isFocused]);
 
-  // Unlock Countdown Effect
-  useEffect(() => {
-    let timer: number;
-    if (unlockCountdown !== null && unlockCountdown > 0) {
-      timer = setTimeout(() => setUnlockCountdown(unlockCountdown - 1), 1000);
-    } else if (unlockCountdown === 0) {
-      setUnlockMessage("Door unlocked!");
-      setTimeout(() => {
-        setShowUnlockOverlay(false);
-        setUnlockCountdown(null);
-        setUnlockMessage("");
-      }, 1000);
-    }
-    return () => clearTimeout(timer);
-  }, [unlockCountdown]);
-
  
+
+  // Handle Manage Business button press - opens link in browser
+  const handleManageBusiness = async () => {
+    try {
+      const supported = await Linking.canOpenURL(softwareLink);
+      if (supported) {
+        await Linking.openURL(softwareLink);
+      } else {
+        Alert.alert("Error", "Unable to open the link. Please try again later.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to open the browser.");
+    }
+  };
 
   const handleUnlockDoor = async () => {
     if (!biometrics || biometrics.length === 0) {
       Alert.alert("No Biometric Device", "No biometric devices available for unlocking.");
       return;
     }
-    setShowUnlockOverlay(true);
-    setUnlockCountdown(6);
-    setUnlockMessage("Unlocking...");
+ 
     try {
       await doorUnlock(biometrics[0].deviceSN);
       // Optionally show a success message via Alert or another state
     } catch (error) {
       Alert.alert("Unlock Failed", "Failed to send unlock request.");
-      setShowUnlockOverlay(false);
-      setUnlockCountdown(null);
-      setUnlockMessage("");
     }
+    
   };
 
   return (
@@ -132,20 +121,32 @@ export default function Home() {
             </Text>
             <Text style={[styles.userName, { color: colors.text }]}>
               {appUser?.fullName?.split(" ")[0] || "Member"}! 👋
-
-            
             </Text>
-            {/* Unlock Door Button */}
-            {biometrics && biometrics.length > 0 && (
+            
+            {/* Button Row for Unlock Door and Manage Business */}
+            <View style={styles.buttonRow}>
+              {/* Unlock Door Button */}
+              {biometrics && biometrics.length > 0 && (
+                <TouchableOpacity
+                  style={styles.unlockButton}
+                  onPress={handleUnlockDoor}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="key" size={20} color="#FFFFFF" />
+                  <Text style={styles.unlockButtonText}>Unlock Door</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Manage Business Button */}
               <TouchableOpacity
-                style={styles.unlockButton}
-                onPress={handleUnlockDoor}
+                style={styles.manageBusinessButton}
+                onPress={handleManageBusiness}
                 activeOpacity={0.8}
               >
-                <Ionicons name="key" size={20} color="#FFFFFF" />
-                <Text style={styles.unlockButtonText}>Unlock Door</Text>
+                <Ionicons name="business" size={20} color="#FFFFFF" />
+                <Text style={styles.manageBusinessButtonText}>Manage Business</Text>
               </TouchableOpacity>
-            )}
+            </View>
           </View>
           <TouchableOpacity
             style={[styles.notificationButton, { backgroundColor: colors.backgroundSecondary }]}
@@ -198,14 +199,14 @@ export default function Home() {
             </Card>
           ) : (
             notifications
-            ?.slice(0,10)
-            ?.map((message, index) => (
-            <MessageCard
-                             key={message.id || index}
-                             notification={message}
-                             onPress={openMessageModal}
-                           />
-            ))
+              ?.slice(0, 10)
+              ?.map((message, index) => (
+                <MessageCard
+                  key={message.id || index}
+                  notification={message}
+                  onPress={openMessageModal}
+                />
+              ))
           )}
         </Animated.View>
 
@@ -236,34 +237,14 @@ export default function Home() {
         </AnimatedCard>
       </ScrollView>
 
-      {/* Unlock Overlay Modal */}
-      <Modal
-        visible={showUnlockOverlay}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {}}
-      >
-        <View style={styles.unlockOverlay}>
-          <View style={[styles.unlockModal, { backgroundColor: colors.card }]}>
-            <Ionicons name="key" size={64} color={colors.primary} />
-            <Text style={[styles.unlockMessage, { color: colors.text }]}>
-              {unlockMessage}
-            </Text>
-            {unlockCountdown !== null && unlockCountdown > 0 && (
-              <Text style={[styles.unlockCountdown, { color: colors.primary }]}>
-                {unlockCountdown}
-              </Text>
-            )}
-          </View>
-        </View>
-      </Modal>
+    
 
       {/* Message Modal */}
-         <MessageModal
-                   visible={isModalVisible}
-                   onClose={closeModal}
-                   selectedMessage={selectedMessage}
-                 />
+      <MessageModal
+        visible={isModalVisible}
+        onClose={closeModal}
+        selectedMessage={selectedMessage}
+      />
     </View>
   );
 }
@@ -296,6 +277,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
   },
+  buttonRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    marginTop: 8,
+    gap: 8,
+  },
   unlockButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -303,10 +291,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    marginTop: 8,
-    alignSelf: "flex-start",
   },
   unlockButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 6,
+  },
+  manageBusinessButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#6366F1", // Indigo/Purple color
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  manageBusinessButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",

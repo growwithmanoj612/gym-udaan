@@ -8,6 +8,7 @@ const attendanceBase = "attendance";
 const membershipBase = "membership";
 const dietPlanBase = "diet-plans";
 const biometricBase = "biometric-devices";
+const appBase = "app";
 
 //owner
 const notificationBaseOwnwer = "owner/notification";
@@ -97,5 +98,8 @@ export const API_ENDPOINTS = {
   biometric: {
     getAll: `${biometricBase}/get-all`,
     unlockDoor: (deviceSN: string) => `${biometricBase}/unlock-door/${deviceSN}`,
+  },
+  app: {
+    getVersionInfo: `${appBase}/version-info`,
   },
 };
