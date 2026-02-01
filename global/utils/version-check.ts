@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useGlobalStore } from '@/store/useGlobalStore';
 import * as Application from 'expo-application';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { useGlobalStore, IVersionCheckResponse } from '@/store/useGlobalStore';
 
 // ✅ Internal interface for version check result
 interface VersionCheckResult {
@@ -14,28 +14,36 @@ interface VersionCheckResult {
   };
 }
 
+
+
 export const useVersionCheck = () => {
   const [updateRequired, setUpdateRequired] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<VersionCheckResult | null>(null);
 
  
   // ✅ Get data and actions from global store
-  const {appVersion,getAppVersion,isLoadingVersion} = useGlobalStore() 
+  const {appVersion,getAppVersion,isLoadingVersion} = useGlobalStore();
 
   useEffect(() => {
-    // ✅ Call the store action to fetch version info
+  
     getAppVersion();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    // ✅ When appVersion changes, check if update is required
+     
     if (appVersion) {
       const currentVersion = Application.nativeApplicationVersion || '1.0.0';
+      
+      console.log('📱 Current app version:', currentVersion);
+      console.log('🆕 Latest iOS version:', appVersion.latestIosVersion);
+      console.log('🆕 Latest Android version:', appVersion.latestAndroidVersion);
       
       // ✅ Get latest version based on platform
       const latestVersion = Platform.OS === 'ios' 
         ? appVersion.latestIosVersion 
         : appVersion.latestAndroidVersion;
+      
+      console.log('🎯 Platform:', Platform.OS, '| Latest version for platform:', latestVersion);
       
       // ✅ Get store URLs based on platform
       const platformStoreUrls = Platform.OS === 'ios'
@@ -44,15 +52,19 @@ export const useVersionCheck = () => {
       
       const needsUpdate = compareVersions(currentVersion, latestVersion) < 0;
       
+    
+      
       if (needsUpdate) {
+        console.log('⚠️ UPDATE REQUIRED!');
         setUpdateRequired(true);
         setUpdateInfo({
           latestVersion,
-          forceUpdate:  true, // Always force update (as per your requirement)
+          forceUpdate: true, // Always force update (as per your requirement)
           updateMessage: 'A new version is available. Please update to continue using the app.',
           storeUrls: platformStoreUrls,
         });
       } else {
+        console.log('✅ App is up to date');
         setUpdateRequired(false);
         setUpdateInfo({
           latestVersion,
@@ -61,6 +73,8 @@ export const useVersionCheck = () => {
           storeUrls: platformStoreUrls,
         });
       }
+    } else {
+      console.log('⚠️ No appVersion data available');
     }
   }, [appVersion]);
 

@@ -1,10 +1,7 @@
-import { create } from 'zustand';   
+import { axios_no_auth } from '@/global/config/axios.config';
 import { API_ENDPOINTS } from '@/global/endpoints/api-endpoints';
 import { createSelectors } from '@/global/utils/auto-selectors';
-import { toast } from '@/providers/toast-provider';
-import * as Application from 'expo-application';
-import { Platform } from 'react-native'; 
-import axios_auth from '@/global/config/axios.config';
+import { create } from 'zustand';
 
 // ✅ Updated interface to match new backend response
 export interface IVersionCheckResponse {
@@ -38,22 +35,31 @@ const useGlobalStoreBase = create<IGlobalStore>((set) => ({
 
   // Actions
   getAppVersion: async () => {
+    console.log('🔍 Starting version check...');
     set({ isLoadingVersion: true });
     try {
+      console.log('📡 Calling API:', API_ENDPOINTS.app.getVersionInfo);
       // ✅ Simple POST request (no body needed)
-      const response = await axios_auth.post(API_ENDPOINTS.app. getVersionInfo);
+      const response = await axios_no_auth.post(API_ENDPOINTS.app.getVersionInfo);
       
-      if (response?. data && response?. data?.status === 200) {
+      console.log('📦 Version check response:', JSON.stringify(response.data, null, 2));
+      
+      if (response?.data && response?.data?.status === 200) {
+        console.log('✅ Version info received:', response.data.data);
         set({ appVersion: response.data.data });
+      } else {
+        console.log('⚠️ Unexpected response format:', response?.data);
       }
-    } catch (error:  any) {
-      const errorMessage = error.response?.data?.message || error;
-      console.error('Version check error:', errorMessage);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || error;
+      console.error('❌ Version check error:', errorMessage);
+      console.error('❌ Full error:', error);
       // Don't show toast for version check failures
       // Don't block the app if version check fails
       set({ appVersion: null });
     } finally {
       set({ isLoadingVersion: false });
+      console.log('🏁 Version check completed');
     }
   },
 }));

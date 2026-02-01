@@ -4,8 +4,8 @@ import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 // http://192.168.16.102
 // const API_BASE_URL =   process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.16.102:9003/api/v1";
-// const API_BASE_URL =    "http://192.168.1.68:9003/api/v1";
-const API_BASE_URL =    "http://69.62.77.89:9003/api/v1";
+const API_BASE_URL =    "http://192.168.16.102:9003/api/v1";
+// const API_BASE_URL =    "http://69.62.77.89:9003/api/v1";
 const API_TIMEOUT = 30000;
 
 // Token storage keys
@@ -54,6 +54,17 @@ export const tokenManager = {
 export const axios_auth: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: API_TIMEOUT,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+
+// ⚠️ PUBLIC axios — use ONLY for bootstrap APIs
+
+export const axios_no_auth = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15000,
   headers: {
     "Content-Type": "application/json",
   },
