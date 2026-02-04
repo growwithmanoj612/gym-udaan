@@ -38,7 +38,7 @@
       }
     },
     "android":  {
-      "versionCode": 10,
+      "versionCode": 11,
       "package": "com.niroj.gymudaan",
       "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
