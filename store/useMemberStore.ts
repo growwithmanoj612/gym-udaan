@@ -1,5 +1,5 @@
 import { create } from 'zustand'; 
-import { IMemberProfile } from '@/global/interfaces';
+// import { IMemberProfile } from '@/global/interfaces';
 import { axios_auth, axios_auth_form } from '@/global/config/axios.config';
 import { API_ENDPOINTS } from '@/global/endpoints/api-endpoints';
 import { createSelectors } from '@/global/utils/auto-selectors';
@@ -34,32 +34,7 @@ const useMemberStoreBase = create<IMemberStore>((set, get) => ({
     }
   },
 
-  updateMemberProfile: async (data: Partial<IMemberProfile>) => {
-    set({ isUpdating: true });
-    try {
-      const response = await axios_auth.put(API_ENDPOINTS.member. updateProfile, data);
-      
-      if (response?.data && response?. status === 200) {
-        set({ memberProfile: response.data.data });
-        
-        toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Profile updated successfully',
-        });
-      }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to update profile';
-      toast. show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMessage,
-      });
-      throw error;
-    } finally {
-      set({ isUpdating:  false });
-    }
-  },
+ 
 
   uploadProfileImage: async (uri: string) => {
     set({ isUpdating: true });

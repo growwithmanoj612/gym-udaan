@@ -326,3 +326,37 @@ export interface IBiometricsDetails  {
   ipAddress?: string;
   doorNo?: number;
 }
+
+
+// for gym plans and stock items
+
+export interface IPlansDetails  {
+  id:number
+  planName: string;
+  durationInDays: number;
+  price: number;
+  discount: number;
+  description: string;
+  facilities: string;
+  isSelected: boolean;
+}
+
+export interface IItemDetails {
+  id:number
+
+  name: string;
+  category: string;
+  sp: number;
+  dp: number;
+  cp: number;
+  stockQuantity: number;
+  primaryUnit: string;
+  openingStock: number;
+  lowStockAlert: number;
+  code: string;
+  location: string;
+  remarks: string;
+  itemType: string;
+  costCode: string;
+  hideCostPrice: boolean;
+}

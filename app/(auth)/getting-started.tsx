@@ -1,114 +1,98 @@
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-
+import { useEffect } from "react";
 import {
   Dimensions,
-  ScrollView,
+  Image,
   StyleSheet,
   Text,
   View,
-  Image,
 } from "react-native";
-
-import { useEffect } from "react";
 import Animated, {
+  FadeIn,
   FadeInDown,
   FadeInUp,
-  SlideInUp,
-  ZoomIn,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withSequence,
-  withTiming,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width, height } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+};
 
 export default function GettingStarted() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ??   "light"];
-  
+  const colors = Colors[colorScheme ?? "light"];
+  const isDark = colorScheme === "dark";
+
   const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
 
-  // ⭐ Enhanced Animations ⭐
-  const pulseScale = useSharedValue(1);
-  const glowOpacity = useSharedValue(0.5);
-  const iconBounce = useSharedValue(0);
+  const logoScale = useSharedValue(1);
+  const glowOpacity = useSharedValue(0.3);
 
   useEffect(() => {
-    // Pulse animation for hero icon
-    pulseScale.value = withRepeat(
+    logoScale.value = withRepeat(
       withSequence(
-        withSpring(1.1, { damping: 2, stiffness: 80 }),
-        withSpring(1, { damping: 2, stiffness: 80 })
+        withSpring(1.05, { damping: 3, stiffness: 60 }),
+        withSpring(1, { damping: 3, stiffness: 60 })
       ),
       -1,
       false
     );
 
-    // Glow effect
     glowOpacity.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 1200 }),
-        withTiming(0.5, { duration: 1200 })
-      ),
-      -1,
-      false
-    );
-
-    // Icon floating
-    iconBounce.value = withRepeat(
-      withSequence(
-        withTiming(-12, { duration: 1500 }),
-        withTiming(0, { duration: 1500 })
+        withTiming(0.6, { duration: 2000 }),
+        withTiming(0.3, { duration: 2000 })
       ),
       -1,
       false
     );
   }, []);
 
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale:   pulseScale.value }],
+  const logoAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: logoScale.value }],
   }));
 
-  const glowStyle = useAnimatedStyle(() => ({
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,
   }));
 
-  const bounceStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: iconBounce.value }],
-  }));
-
-  const quickStats = [
-    { icon: "checkmark-circle", label: "Track Attendance", color: "#FF6B35" },
-    { icon: "card", label: "View Membership", color: "#FF8C42" },
-    { icon: "notifications", label: "Get Alerts", color: "#FFA726" },
-  ];
-
-  const benefits = [
+  const features = [
     {
-      icon: "calendar-outline",
-      title: "Attendance History",
-      desc: "Track your gym visits and stay consistent with your fitness journey.",
+      icon: "fitness-outline" as const,
+      title: "Track Attendance",
+      description: "Monitor your gym visits effortlessly",
     },
     {
-      icon: "ribbon-outline",
-      title: "Membership Details",
-      desc: "View your plan, renewal dates, and membership benefits anytime.",
+      icon: "card-outline" as const,
+      title: "Membership Status",
+      description: "View plans and renewal dates",
     },
     {
-      icon: "megaphone-outline",
-      title: "Important Alerts",
-      desc: "Stay updated with gym announcements, events, and personalized notifications.",
+      icon: "notifications-outline" as const,
+      title: "Stay Updated",
+      description: "Get important gym announcements",
     },
   ];
 
@@ -119,161 +103,153 @@ export default function GettingStarted() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Gradient Background Overlay */}
       <LinearGradient
-        colors={['rgba(255, 107, 53, 0.05)', 'rgba(255, 140, 66, 0.02)', 'transparent']}
-        style={styles.gradientOverlay}
+        colors={
+          isDark
+            ? ["rgba(255, 107, 53, 0.08)", "transparent"]
+            : ["rgba(255, 107, 53, 0.06)", "transparent"]
+        }
+        style={styles.backgroundGradient}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 0.6 }}
       />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* ⭐ Hero Section with Custom Logo ⭐ */}
-        <Animated.View
-          entering={ZoomIn.duration(800).springify()}
-          style={styles.heroSection}
-        >
-          {/* Animated Glow Background */}
-          <Animated.View style={[styles.glowCircle, glowStyle]}>
+      <View style={[styles.content, { paddingTop: insets.top + SPACING.xxl }]}>
+        <View style={styles.heroSection}>
+          <Animated.View style={[styles.glowContainer, glowAnimatedStyle]}>
             <LinearGradient
-              colors={['rgba(255, 107, 53, 0.3)', 'rgba(255, 140, 66, 0.1)']}
+              colors={["rgba(255, 107, 53, 0.4)", "transparent"]}
               style={styles.glowGradient}
             />
           </Animated.View>
 
-          {/* Main Logo - UPDATED SECTION */}
-          <Animated.View style={[styles.logoContainer, pulseStyle]}>
-            <Animated.View style={bounceStyle}>
+          <Animated.View
+            entering={FadeIn.duration(800)}
+            style={[styles.logoWrapper, logoAnimatedStyle]}
+          >
+            <View
+              style={[
+                styles.logoContainer,
+                {
+                  shadowColor: colors.primary,
+                  backgroundColor: colors.card,
+                },
+              ]}
+            >
               <Image
                 source={require("../../assets/images/gymudaanmobileapplogo.jpg")}
                 style={styles.logoImage}
-                resizeMode="contain"
+                resizeMode="cover"
               />
-            </Animated.View>
+            </View>
           </Animated.View>
 
           <Animated.Text
-            entering={FadeInUp.delay(300).springify()}
-            style={[styles.appName, { color: colors.text }]}
+            entering={FadeInUp.delay(200).duration(600)}
+            style={[styles.brandName, { color: colors.text }]}
           >
             GYM UDAAN
           </Animated.Text>
 
           <Animated.Text
-            entering={FadeInUp.delay(450).springify()}
+            entering={FadeInUp.delay(350).duration(600)}
             style={[styles.tagline, { color: colors.textSecondary }]}
           >
             Your Personal Fitness Companion
           </Animated.Text>
+        </View>
 
-          <Animated.View
-            entering={FadeInUp.delay(600)}
-            style={styles.divider}
+        <Animated.View
+          entering={FadeInDown.delay(500).duration(600)}
+          style={styles.valueSection}
+        >
+          <View
+            style={[
+              styles.valueCard,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255, 107, 53, 0.08)"
+                  : "rgba(255, 107, 53, 0.05)",
+                borderColor: isDark
+                  ? "rgba(255, 107, 53, 0.15)"
+                  : "rgba(255, 107, 53, 0.1)",
+              },
+            ]}
           >
-            <View style={styles.dividerLine} />
-            <Ionicons name="barbell" size={20} color="#FF6B35" style={styles.dividerIcon} />
-            <View style={styles.dividerLine} />
-          </Animated.View>
+            <Text style={[styles.valueText, { color: colors.text }]}>
+              Your gym membership, access, and updates — all in one place.
+            </Text>
+          </View>
         </Animated.View>
 
-        {/* ⭐ Quick Stats ⭐ */}
-        <View style={styles.quickStatsContainer}>
-          {quickStats.map((stat, index) => (
+        <View style={styles.featuresSection}>
+          {features.map((feature, index) => (
             <Animated.View
-              key={index}
-              entering={FadeInUp.delay(700 + index * 100).springify()}
-              style={styles.statCard}
+              key={feature.title}
+              entering={FadeInDown.delay(650 + index * 100).duration(500)}
+              style={[
+                styles.featureItem,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
             >
-              <View style={[styles.statIconWrapper, { backgroundColor: `${stat.color}15` }]}>
-                <Ionicons name={stat.icon as any} size={28} color={stat.color} />
+              <View
+                style={[
+                  styles.featureIconWrapper,
+                  { backgroundColor: `${colors.primary}15` },
+                ]}
+              >
+                <Ionicons
+                  name={feature.icon}
+                  size={22}
+                  color={colors.primary}
+                />
               </View>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                {stat.label}
-              </Text>
+              <View style={styles.featureContent}>
+                <Text style={[styles.featureTitle, { color: colors.text }]}>
+                  {feature.title}
+                </Text>
+                <Text
+                  style={[
+                    styles.featureDescription,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  {feature.description}
+                </Text>
+              </View>
             </Animated.View>
           ))}
         </View>
+      </View>
 
-        {/* ⭐ Main Features Section ⭐ */}
-        <Animated.View
-          entering={FadeInDown.delay(1000)}
-          style={styles.featuresSection}
-        >
-          <View style={styles.sectionHeader}>
-            <Ionicons name="sparkles" size={24} color="#FF6B35" />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              What You'll Get
-            </Text>
-          </View>
-
-          {benefits.map((benefit, index) => (
-            <Animated.View
-              key={index}
-              entering={FadeInUp.delay(1100 + index * 150).springify()}
-            >
-              <Card elevated style={styles.benefitCard}>
-                <View style={styles.benefitIconContainer}>
-                  <LinearGradient
-                    colors={['#FF6B35', '#FF8C42']}
-                    style={styles.benefitIconCircle}
-                  >
-                    <Ionicons name={benefit.icon as any} size={26} color="#FFFFFF" />
-                  </LinearGradient>
-                </View>
-
-                <View style={styles.benefitContent}>
-                  <Text style={[styles.benefitTitle, { color: colors.text }]}>
-                    {benefit.title}
-                  </Text>
-                  <Text style={[styles.benefitDesc, { color: colors.textSecondary }]}>
-                    {benefit.desc}
-                  </Text>
-                </View>
-              </Card>
-            </Animated.View>
-          ))}
-        </Animated.View>
-
-        {/* ⭐ Call to Action Message ⭐ */}
-        <Animated.View
-          entering={FadeInUp.delay(1600)}
-          style={styles.ctaMessage}
-        >
-          <LinearGradient
-            colors={['rgba(255, 107, 53, 0.1)', 'rgba(255, 140, 66, 0.05)']}
-            style={styles.ctaCard}
-          >
-            <Ionicons name="rocket" size={32} color="#FF6B35" />
-            <Text style={[styles.ctaText, { color: colors.text }]}>
-              Ready to take control of your fitness journey?
-            </Text>
-            <Text style={[styles.ctaSubtext, { color: colors.textSecondary }]}>
-              Login to access your personalized dashboard
-            </Text>
-          </LinearGradient>
-        </Animated.View>
-      </ScrollView>
-
-      {/* ⭐ Bottom CTA Button ⭐ */}
       <Animated.View
-        entering={SlideInUp.duration(600).springify()}
-        style={[styles.bottomSection, { backgroundColor: colors.background }]}
+        entering={FadeInUp.delay(950).duration(500)}
+        style={[
+          styles.bottomSection,
+          {
+            paddingBottom: insets.bottom + SPACING.xl,
+            backgroundColor: colors.background,
+          },
+        ]}
       >
-        <LinearGradient
-          colors={['transparent', colors.background]}
-          style={styles.bottomGradient}
-        />
         <Button
-          title="Get Started"
+          title="Continue"
           onPress={handleGetStarted}
           variant="primary"
           size="large"
           style={styles.ctaButton}
         />
-        <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-          Join hundreds of members achieving their fitness goals
-        </Text>
+
+        <View style={styles.infoContainer}>
+          <Ionicons
+            name="information-circle-outline"
+            size={16}
+            color={colors.textTertiary}
+          />
+          <Text style={[styles.infoText, { color: colors.textTertiary }]}>
+            Account provided by your gym via gymudaan.com
+          </Text>
+        </View>
       </Animated.View>
     </View>
   );
@@ -283,234 +259,124 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
-  gradientOverlay:   {
-    position: 'absolute',
+  backgroundGradient: {
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: height * 0.5,
+    height: SCREEN_HEIGHT * 0.5,
   },
-
-  scrollContent: {
-    paddingTop: 70,
-    paddingHorizontal: 20,
-    paddingBottom: 180,
+  content: {
+    flex: 1,
+    paddingHorizontal: SPACING.xxl,
   },
-
-  // Hero Section
   heroSection: {
-    alignItems: 'center',
-    marginBottom: 40,
-    paddingVertical: 20,
+    alignItems: "center",
+    paddingTop: SPACING.xxxl,
   },
-
-  glowCircle:   {
-    position: 'absolute',
-    top: 0,
+  glowContainer: {
+    position: "absolute",
+    top: -20,
     width: 200,
     height: 200,
+    alignItems: "center",
+    justifyContent: "center",
   },
-
   glowGradient: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 100,
   },
-
-  // 🔥 UPDATED: Custom Logo Styles
+  logoWrapper: {
+    marginBottom: SPACING.xl,
+  },
   logoContainer: {
-    marginBottom: 24,
-    zIndex: 10,
-  },
-
-  logoImage: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    shadowColor: '#FF6B35',
-    shadowOffset: { width:  0, height: 8 },
-    shadowOpacity:  0.4,
+    width: 120,
+    height: 120,
+    borderRadius: 32,
+    overflow: "hidden",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
     shadowRadius: 20,
-    elevation: 12,
+    elevation: 15,
   },
-  // END UPDATED SECTION
-
-  appName: {
-    fontSize: 38,
-    fontWeight: '900',
-    letterSpacing: 2,
-    marginBottom: 8,
+  logoImage: {
+    width: "100%",
+    height: "100%",
   },
-
+  brandName: {
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: 3,
+    marginBottom: SPACING.sm,
+  },
   tagline: {
     fontSize: 16,
-    textAlign: 'center',
-    letterSpacing: 0.5,
-    marginBottom: 20,
+    fontWeight: "500",
+    letterSpacing: 0.3,
   },
-
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-    width: '60%',
+  valueSection: {
+    marginTop: SPACING.xxxl,
   },
-
-  dividerLine: {
-    flex:  1,
-    height:   1,
-    backgroundColor: '#FF6B3530',
-  },
-
-  dividerIcon: {
-    marginHorizontal: 12,
-  },
-
-  // Quick Stats
-  quickStatsContainer:  {
-    flexDirection: 'row',
-    justifyContent:  'space-between',
-    marginBottom: 40,
-    gap: 12,
-  },
-
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-
-  statIconWrapper: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-
-  statLabel: {
-    fontSize: 12,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-
-  // Features Section
-  featuresSection: {
-    marginBottom: 30,
-  },
-
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    gap: 10,
-  },
-
-  sectionTitle:  {
-    fontSize: 24,
-    fontWeight: '800',
-  },
-
-  benefitCard: {
-    padding:  18,
-    marginBottom:  16,
-    flexDirection:  'row',
-    alignItems: 'flex-start',
-  },
-
-  benefitIconContainer:   {
-    marginRight: 16,
-  },
-
-  benefitIconCircle:  {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#FF6B35',
-    shadowOffset:  { width:   0, height: 4 },
-    shadowOpacity:  0.3,
-    shadowRadius:  8,
-    elevation: 6,
-  },
-
-  benefitContent: {
-    flex:  1,
-    paddingTop: 4,
-  },
-
-  benefitTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-
-  benefitDesc: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-
-  // CTA Message
-  ctaMessage:   {
-    marginBottom: 20,
-  },
-
-  ctaCard: {
-    padding:  24,
-    borderRadius:  16,
-    alignItems:  'center',
+  valueCard: {
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 53, 0.2)',
   },
-
-  ctaText: {
-    fontSize:  18,
-    fontWeight:  '700',
-    textAlign:  'center',
-    marginTop: 12,
-    marginBottom: 6,
+  valueText: {
+    fontSize: 17,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 24,
   },
-
-  ctaSubtext: {
-    fontSize:  14,
-    textAlign: 'center',
+  featuresSection: {
+    marginTop: SPACING.xxl,
+    gap: SPACING.md,
   },
-
-  // Bottom Section
-  bottomSection: {
-    position: 'absolute',
-    bottom: 0,
-    left:  0,
-    right:   0,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width:  0, height: -4 },
-    shadowOpacity:  0.1,
-    shadowRadius: 12,
-    elevation:  10,
+  featureItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: SPACING.lg,
+    borderRadius: 16,
+    borderWidth: 1,
   },
-
-  bottomGradient: {
-    position:  'absolute',
-    top: -40,
-    left: 0,
-    right:  0,
-    height: 40,
+  featureIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: SPACING.lg,
   },
-
-  ctaButton: {
-    width:   '100%',
-    marginBottom: 12,
+  featureContent: {
+    flex: 1,
   },
-
-  footerText: {
+  featureTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  featureDescription: {
     fontSize: 13,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    fontWeight: "500",
+  },
+  bottomSection: {
+    paddingHorizontal: SPACING.xxl,
+    paddingTop: SPACING.lg,
+  },
+  ctaButton: {
+    width: "100%",
+  },
+  infoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  infoText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
 });

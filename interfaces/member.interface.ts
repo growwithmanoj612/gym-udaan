@@ -8,7 +8,7 @@ export interface IMemberStore {
 
   // Actions
   fetchMemberProfile: () => Promise<void>;
-  updateMemberProfile: (data: Partial<IMemberDetails>) => Promise<void>;
+  // updateMemberProfile: (data: Partial<IMemberDetails>) => Promise<void>;
   uploadProfileImage: (uri: string) => Promise<void>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
 }

@@ -19,9 +19,9 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
   // Calculate the tab bar height based on platform and safe area insets
-  const tabBarHeight = Platform. select({
-    ios: 88,
-    android:  60 + insets.bottom, // Add bottom inset for Android navigation bar
+  const tabBarHeight = Platform.select({
+    ios: 60,
+    android: 60 + insets.bottom, // Add bottom inset for Android navigation bar
     default: 68,
   });
 
@@ -129,6 +129,19 @@ export default function TabLayout() {
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
                 name={focused ? "restaurant" : "restaurant-outline"}
+                size={24}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="services"
+          options={{
+            title: "Services",
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? "storefront" : "storefront-outline"}
                 size={24}
                 color={color}
               />

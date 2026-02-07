@@ -9,6 +9,8 @@ const membershipBase = "membership";
 const dietPlanBase = "diet-plans";
 const biometricBase = "biometric-devices";
 const appBase = "app";
+const plansBase = "plans";
+const itemsBase = "items";
 
 //owner
 const notificationBaseOwnwer = "owner/notification";
@@ -76,6 +78,16 @@ export const API_ENDPOINTS = {
     getAll:  `${dietPlanBase}/get-all`,
     getMy: `${dietPlanBase}/my-plans`,
     getById: (id: number) => `${dietPlanBase}/${id}`,
+  },
+
+  plans: {
+    getAll: `${plansBase}/get-all`,
+    getById: (id: number) => `${plansBase}/${id}`,
+  },
+
+  items: {
+    getAll: `${itemsBase}/get-all`,
+    getById: (id: number) => `${itemsBase}/${id}`,
   },
 
 
