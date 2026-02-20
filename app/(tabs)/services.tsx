@@ -131,8 +131,8 @@ export default function MemberServicesScreen() {
             <View style={styles.planIconContainer}>
               <Ionicons name="barbell" size={24} color={colors.primary} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.planTitle, { color: colors.text }]}>
+            <View style={styles.planHeaderInfo}>
+              <Text style={[styles.planTitle, { color: colors.text }]} numberOfLines={2}>
                 {item?.planName}
               </Text>
               <View style={styles.durationContainer}>
@@ -165,36 +165,36 @@ export default function MemberServicesScreen() {
 
           {/* Pricing Section */}
           <View style={[styles.pricingSection, { borderTopColor: colors.border }]}>
-            <View style={{ flex: 1 }}>
-              {hasDiscount && (
-                <View style={styles.originalPriceContainer}>
-                  <Text style={[styles.originalPriceLabel, { color: colors.textTertiary }]}>
-                    Regular Price
-                  </Text>
-                  <Text style={[styles.originalPrice, { color: colors.textTertiary }]}>
-                    Rs {withOutDiscount?.toLocaleString()}
-                  </Text>
-                </View>
-              )}
-              <View style={styles.finalPriceContainer}>
-                <View>
-                  <Text style={[styles.finalPriceLabel, { color: colors.textSecondary }]}>
-                    {hasDiscount ? 'Special Price' : 'Price'}
-                  </Text>
-                  <Text style={[styles.finalPrice, { color: colors.primary }]}>
-                    Rs {finalPrice?.toLocaleString()}
-                  </Text>
-                </View>
-                {hasDiscount && (
-                  <View style={styles.savingsContainer}>
-                    <Ionicons name="pricetag" size={16} color="#10B981" />
-                    <Text style={styles.savingsText}>
-                      You save Rs {savings?.toLocaleString()}
-                    </Text>
-                  </View>
-                )}
+            {hasDiscount && (
+              <View style={styles.originalPriceContainer}>
+                <Text style={[styles.originalPriceLabel, { color: colors.textTertiary }]}>
+                  Regular Price
+                </Text>
+                <Text style={[styles.originalPrice, { color: colors.textTertiary }]}>
+                  Rs {withOutDiscount?.toLocaleString()}
+                </Text>
+              </View>
+            )}
+            
+            <View style={styles.finalPriceRow}>
+              <View style={styles.priceColumn}>
+                <Text style={[styles.finalPriceLabel, { color: colors.textSecondary }]}>
+                  {hasDiscount ? 'Special Price' : 'Price'}
+                </Text>
+                <Text style={[styles.finalPrice, { color: colors.primary }]}>
+                  Rs {finalPrice?.toLocaleString()}
+                </Text>
               </View>
             </View>
+
+            {hasDiscount && (
+              <View style={styles.savingsContainer}>
+                <Ionicons name="pricetag" size={16} color="#10B981" />
+                <Text style={styles.savingsText}>
+                  You save Rs {savings?.toLocaleString()}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </Animated.View>
@@ -619,6 +619,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 12,
   },
+  planHeaderInfo: {
+    flex: 1,
+    paddingRight: 8,
+  },
   planIconContainer: {
     width: 48,
     height: 48,
@@ -628,10 +632,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   planTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     letterSpacing: -0.3,
     marginBottom: 6,
+    lineHeight: 26,
   },
   durationContainer: {
     flexDirection: 'row',
@@ -666,47 +671,53 @@ const styles = StyleSheet.create({
   pricingSection: {
     paddingTop: 20,
     borderTopWidth: 1,
+    gap: 12,
   },
   originalPriceContainer: {
-    marginBottom: 8,
+    marginBottom: 4,
   },
   originalPriceLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   originalPrice: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     textDecorationLine: 'line-through',
   },
-  finalPriceContainer: {
+  finalPriceRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
+  priceColumn: {
+    flex: 1,
+  },
   finalPriceLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   finalPrice: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '800',
     letterSpacing: -1,
   },
   savingsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
     borderRadius: 12,
+    alignSelf: 'stretch',
   },
   savingsText: {
     color: '#10B981',

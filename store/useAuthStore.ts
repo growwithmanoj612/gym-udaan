@@ -1,4 +1,4 @@
-import { IAppUserMemberDetails, ILoginRequest } from '@/global/interfaces';
+import { IAppUserMemberDetails, IBusinessDetails, ILoginRequest } from '@/global/interfaces';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
@@ -10,7 +10,7 @@ import { toast } from '@/providers/toast-provider';
 
 export const ONBOARDING_KEY = '@gym_udaan_onboarding';
 export const TENANT_KEY = '@gym_udaan_tenant';
-export const TENANT_NAME_KEY = '@gym_udaan_tenant_name';
+export const TENANT_DETAILS_KEY = '@gym_udaan_tenant_details';
 export const APP_USER_KEY = '@gym_udaan_app_user';  // New key for persisting appUser
 
 const defaultAppUser: IAppUserMemberDetails = {
@@ -29,7 +29,7 @@ const useAuthStoreBase = create<IAuthStore>((set, get) => ({
   isLoading: false,
   hasCompletedOnboarding: false,
   selectedTenantId: null,
-  selectedTenantName: null,
+  selectedTenantDetails: null,
   token: null,
   isOffline: false,  // Added isOffline to state
 
@@ -209,11 +209,21 @@ const errorMessage = error.response?.data?.message || 'Authentication failed.';
   loadPersistedState: async () => {
     const onboarding = await AsyncStorage.getItem(ONBOARDING_KEY);
     const tenant = await AsyncStorage.getItem(TENANT_KEY);
-    const tenantName = await AsyncStorage.getItem(TENANT_NAME_KEY);
+    const tenantDetailsStr = await AsyncStorage.getItem(TENANT_DETAILS_KEY);
+    
+    let tenantDetails = null;
+    if (tenantDetailsStr) {
+      try {
+        tenantDetails = JSON.parse(tenantDetailsStr);
+      } catch (e) {
+        console.error('Failed to parse tenant details:', e);
+      }
+    }
+    
     set({
       hasCompletedOnboarding: onboarding === 'true',
       selectedTenantId: tenant,
-      selectedTenantName: tenantName
+      selectedTenantDetails: tenantDetails
     });
   },
 
@@ -222,13 +232,15 @@ const errorMessage = error.response?.data?.message || 'Authentication failed.';
     set({ hasCompletedOnboarding: true });
   },
 
-  selectTenant: async (tenantId: string) => {
+  selectTenant: async (tenantId: string, tenantDetails?: IBusinessDetails) => {
     await AsyncStorage.setItem(TENANT_KEY, tenantId);
-    set({ selectedTenantId: tenantId });
-  },
-  selectTenantName: async (tenantName: string) => {
-    await AsyncStorage.setItem(TENANT_NAME_KEY, tenantName);
-    set({ selectedTenantName: tenantName });
+    
+    if (tenantDetails) {
+      await AsyncStorage.setItem(TENANT_DETAILS_KEY, JSON.stringify(tenantDetails));
+      set({ selectedTenantId: tenantId, selectedTenantDetails: tenantDetails });
+    } else {
+      set({ selectedTenantId: tenantId });
+    }
   },
 
   setToken: async (token: string) => {

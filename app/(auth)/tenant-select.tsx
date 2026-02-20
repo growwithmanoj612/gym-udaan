@@ -8,23 +8,23 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Animated, {
-    FadeIn,
-    FadeInDown,
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -156,7 +156,6 @@ export default function TenantSelect() {
   const isDark = colorScheme === "dark";
 
   const selectTenant = useAuthStore((state) => state.selectTenant);
-  const selectTenantName = useAuthStore((state) => state.selectTenantName);
   const gyms = useBusinessStore((state) => state.businessDetails);
   const fetchGyms = useBusinessStore((state) => state.fetchBusinessDetails);
   const isLoading = useBusinessStore((state) => state.isLoading);
@@ -175,10 +174,7 @@ export default function TenantSelect() {
   );
 
   const handleSelectGym = async (gym: IBusinessDetails) => {
-    await selectTenant(gym?.id?.toString());
-    if (gym?.businessName) {
-      await selectTenantName(gym?.businessName?.replaceAll("_", " "));
-    }
+    await selectTenant(gym?.id?.toString(), gym);
     router.replace("/(auth)/login");
   };
 

@@ -1,5 +1,5 @@
 import { AppUserRoles } from '@/global/enums';
-import { IAppUserMemberDetails, ILoginRequest, ILoginResponse } from '@/global/interfaces';
+import { IAppUserMemberDetails, IBusinessDetails, ILoginRequest } from '@/global/interfaces';
 
 export interface IAuthStore {
   // State
@@ -8,7 +8,7 @@ export interface IAuthStore {
   isLoading: boolean;
   hasCompletedOnboarding: boolean;
   selectedTenantId: string | null;
-  selectedTenantName: string | null;
+  selectedTenantDetails: IBusinessDetails | null;
   token: string | null;
   isOffline : boolean
 
@@ -22,8 +22,7 @@ export interface IAuthStore {
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>
   checkAuth: () => Promise<void>;
   completeOnboarding: () => void;
-  selectTenant: (tenantId:  string) => void;
-  selectTenantName: (tenantName:  string) => void;
+  selectTenant: (tenantId:  string, tenantDetails?: IBusinessDetails) => void;
   clearSelectTenant: () => void;
   
   // Token management

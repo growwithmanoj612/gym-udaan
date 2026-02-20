@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
- 
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -44,6 +44,7 @@ export default function Home() {
   // Stores
   const appUser = useAuthStore((state) => state.appUser);
   const checkAuth = useAuthStore((state) => state.checkAuth);
+  const selectedTenantDetails = useAuthStore((state) => state.selectedTenantDetails);
   const { notifications, unreadCount, isLoading, fetchPaginated, getUnreadCount, markAsRead } = useNotificationStore();
   const { currentMembership, fetchCurrentMembership } = useMembershipStore();
 
@@ -81,20 +82,30 @@ export default function Home() {
     getUnreadCount();
   }, [isFocused]);
 
-
+  const handleCallGym = () => {
+    // priority is for customercare if not than owner
+    const phoneNumber = selectedTenantDetails?.customerCareNumber   || selectedTenantDetails?.businessPhone;
+    
+    if (phoneNumber) {
+      Linking.openURL(`tel:${phoneNumber}`);
+    } else {
+      // Fallback if no phone number available
+      alert("No phone number available for this gym");
+    }
+  };
 
   const quickActions = [
     {
-      icon: "restaurant",
-      title: "Diet Plan",
+      icon: "call",
+      title: "Call Gym",
       color: "#10B981",
-      route: "/(tabs)/diet-plans",
+      onPress: handleCallGym,
     },
     {
-      icon: "checkmark-circle",
-      title: "Check-in",
+      icon: "barbell",
+      title: "Gym Plans",
       color: "#3B82F6",
-      route: "/(tabs)/attendance",
+      route: "/services",
     },
   ];
 
@@ -185,7 +196,7 @@ export default function Home() {
                 entering={FadeInRight.delay(250 + index * 50).springify()}
               >
                 <TouchableOpacity
-                  onPress={() => router.push(action.route as any)}
+                  onPress={() => action.onPress ? action.onPress() : router.push(action.route as any)}
                   activeOpacity={0.7}
                 >
                   <Card elevated style={styles.actionCard}>

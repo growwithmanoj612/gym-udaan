@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Colors } from "@/constants/color";
 import { AppUserRoles } from "@/global/enums";
@@ -10,23 +9,23 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Alert,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Dimensions,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    FadeIn,
+    FadeInDown,
+    FadeInUp,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -53,7 +52,7 @@ export default function Login() {
   const isLoading = useAuthStore((state) => state.isLoading);
   const selectedTenantId = useAuthStore((state) => state.selectedTenantId);
   const selectTenant = useAuthStore((state) => state.selectTenant);
-  const selectedTenantName = useAuthStore((state) => state.selectedTenantName);
+  const selectedTenantDetails = useAuthStore((state) => state.selectedTenantDetails);
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
@@ -201,7 +200,7 @@ export default function Login() {
             Welcome Back
           </Animated.Text>
 
-          {selectedTenantName ? (
+          {selectedTenantDetails ? (
             <Animated.View
               entering={FadeInDown.delay(400).duration(500)}
               style={[
@@ -218,7 +217,7 @@ export default function Login() {
                 <Ionicons name="barbell" size={12} color="#FFFFFF" />
               </View>
               <Text style={[styles.gymBadgeText, { color: colors.text }]}>
-                {selectedTenantName}
+                {selectedTenantDetails.businessName?.replaceAll("_", " ")}
               </Text>
               <TouchableOpacity
                 onPress={handleChangeGym}
@@ -338,7 +337,7 @@ export default function Login() {
               </Animated.View>
 
               {/* Change Gym Link */}
-              {!selectedTenantName && (
+              {!selectedTenantDetails && (
                 <TouchableOpacity
                   style={styles.changeGymLink}
                   onPress={handleChangeGym}

@@ -1,8 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { Colors } from "@/constants/color";
+import { IAttendanceDetails } from "@/global/interfaces";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAttendanceStore } from "@/store/useAttendanceStore";
 import { Ionicons } from "@expo/vector-icons";
+import { endOfMonth, format, parseISO, startOfMonth } from "date-fns";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -13,8 +15,6 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
-import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
-import { IAttendanceDetails } from "@/global/interfaces";
 
 const AnimatedCard = Animated.createAnimatedComponent(Card);
 
@@ -50,11 +50,37 @@ export default function Attendance() {
     const absentDays = daysInMonth - presentDays;
     const attendancePercentage = (presentDays / daysInMonth) * 100;
 
+    // Check if selected month is current month
+    const isCurrentMonth = selectedYearMonth === format(new Date(), "yyyy-MM");
+    
+    // Motivational message based on attendance
+    let motivationMessage = "";
+    let motivationIcon: any = "star";
+    if (attendancePercentage >= 90) {
+      motivationMessage = "Excellent! Keep it up! 💪";
+      motivationIcon = "trophy";
+    } else if (attendancePercentage >= 75) {
+      motivationMessage = "Great progress! 🔥";
+      motivationIcon = "flame";
+    } else if (attendancePercentage >= 60) {
+      motivationMessage = "Good! Keep pushing! 👍";
+      motivationIcon = "thumbs-up";
+    } else if (attendancePercentage >= 40) {
+      motivationMessage = "You can do better! 💪";
+      motivationIcon = "fitness";
+    } else {
+      motivationMessage = "Let's get back on track! 🎯";
+      motivationIcon = "rocket";
+    }
+
     return {
       totalDays: daysInMonth,
       presentDays,
       absentDays,
-      attendancePercentage: isNaN(attendancePercentage) ? 0 : attendancePercentage.toFixed(2),
+      attendancePercentage: isNaN(attendancePercentage) ? 0 : attendancePercentage.toFixed(1),
+      isCurrentMonth,
+      motivationMessage,
+      motivationIcon,
     };
   };
 
@@ -142,28 +168,40 @@ export default function Attendance() {
           <Card gradient style={styles.statsCard}>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <Ionicons name="calendar" size={32} color="#FFFFFF" />
+                <Ionicons name="calendar" size={28} color="#FFFFFF" />
                 <Text style={styles.statValue}>{stats.totalDays}</Text>
                 <Text style={styles.statLabel}>Total Days</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Ionicons name="checkmark-circle" size={32} color="#FFFFFF" />
+                <Ionicons name="checkmark-circle" size={28} color="#FFFFFF" />
                 <Text style={styles.statValue}>{stats.presentDays}</Text>
-                <Text style={styles.statLabel}>Present Days</Text>
+                <Text style={styles.statLabel}>Present</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Ionicons name="close-circle" size={32} color="#FFFFFF" />
+                <Ionicons 
+                  name={stats.isCurrentMonth ? "hourglass-outline" : "close-circle"} 
+                  size={28} 
+                  color="#FFFFFF" 
+                />
                 <Text style={styles.statValue}>{stats.absentDays}</Text>
-                <Text style={styles.statLabel}>Absent Days</Text>
+                <Text style={styles.statLabel}>
+                  {stats.isCurrentMonth ? "Remaining" : "Absent"}
+                </Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Ionicons name="analytics-circle" size={32} color="#FFFFFF" />
+                <Ionicons name="analytics" size={28} color="#FFFFFF" />
                 <Text style={styles.statValue}>{stats.attendancePercentage}%</Text>
-                <Text style={styles.statLabel}>Attendance %</Text>
+                <Text style={styles.statLabel}>Rate</Text>
               </View>
+            </View>
+            
+            {/* Motivational Message */}
+            <View style={styles.motivationContainer}>
+              <Ionicons name={stats.motivationIcon} size={20} color="#FFFFFF" />
+              <Text style={styles.motivationText}>{stats.motivationMessage}</Text>
             </View>
           </Card>
         </Animated.View>
@@ -274,30 +312,46 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   statsCard: {
-    padding: 20,
+    padding: 16,
   },
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 12,
   },
   statItem: {
     flex: 1,
     alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: "rgba(255,255,255,0.9)",
+    textAlign: "center",
   },
   statDivider: {
     width: 1,
-    height: 40,
+    height: 35,
     backgroundColor: "rgba(255,255,255,0.3)",
+  },
+  motivationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.2)",
+  },
+  motivationText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   section: {
     paddingHorizontal: 20,
