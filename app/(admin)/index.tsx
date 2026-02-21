@@ -360,7 +360,7 @@ export default function Home() {
                     {getGreeting()}
                   </Text>
                   <Text style={[styles.userName, { color: colors.text }]}>
-                    {appUser?.fullName?.split(" ")[0] || "Member"} 👋
+                    {appUser?.fullName?.split(" ")[0] || "Owner"} 👋
                   </Text>
                 </View>
               </View>
