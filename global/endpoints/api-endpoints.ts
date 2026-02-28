@@ -11,6 +11,7 @@ const biometricBase = "biometric-devices";
 const appBase = "app";
 const plansBase = "plans";
 const itemsBase = "items";
+const workoutPlansBase = "workout-plans";
 
 //owner
 const notificationBaseOwnwer = "owner/notification";
@@ -88,6 +89,25 @@ export const API_ENDPOINTS = {
   items: {
     getAll: `${itemsBase}/get-all`,
     getById: (id: number) => `${itemsBase}/${id}`,
+  },
+
+  // Workout Plans
+  workoutPlans: {
+    getToday: `${workoutPlansBase}/today`,
+    getAll: `${workoutPlansBase}/get-all`, // Template data only
+    getMemberAll: `${workoutPlansBase}/member/get-all`, // With member overrides applied
+    getById: (id: number) => `${workoutPlansBase}/get/${id}`,
+    getByDay: (dayOfWeek: string) => `${workoutPlansBase}/get-by-day?dayOfWeek=${dayOfWeek}`,
+    weekProgress: (startDate?: string) => 
+      startDate 
+        ? `${workoutPlansBase}/progress/week?start=${startDate}`
+        : `${workoutPlansBase}/progress/week`,
+    log: `${workoutPlansBase}/log`, // Mark workout as done
+    setOverride: `${workoutPlansBase}/override`, // Set custom day override
+    resetOverride: (subTitleId: number) => `${workoutPlansBase}/override/${subTitleId}`, // Reset override
+    updateSubTitle: (subTitleId: number) => `${workoutPlansBase}/subtitle/${subTitleId}`, // Update exercise details
+    createSubTitle: `${workoutPlansBase}/subtitle/create`, // Create new exercise subtitle
+    updatePlanDay: (planId: number) => `${workoutPlansBase}/update/${planId}`, // Move plan to different day
   },
 
 

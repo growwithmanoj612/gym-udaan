@@ -6,6 +6,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useMembershipStore } from "@/store/useMembershipStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import { useWorkoutStore } from "@/store/useWorkoutStore";
 
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
@@ -47,6 +48,7 @@ export default function Home() {
   const selectedTenantDetails = useAuthStore((state) => state.selectedTenantDetails);
   const { notifications, unreadCount, isLoading, fetchPaginated, getUnreadCount, markAsRead } = useNotificationStore();
   const { currentMembership, fetchCurrentMembership } = useMembershipStore();
+  const { today, isTodayLoading, fetchToday, markDone } = useWorkoutStore();
 
   // Modal state
   const [selectedMessage, setSelectedMessage] =
@@ -80,6 +82,7 @@ export default function Home() {
   useEffect(() => {
     fetchPaginated();
     getUnreadCount();
+    fetchToday();
   }, [isFocused]);
 
   const handleCallGym = () => {
@@ -180,6 +183,136 @@ export default function Home() {
             </View>
           </AnimatedCard>
         )}
+
+        {/* Today's Workout */}
+        <Animated.View
+          entering={FadeInDown.delay(150).springify()}
+          style={styles.section}
+        >
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Today's Workout
+            </Text>
+            <TouchableOpacity onPress={() => router.push("/workout-details")}>
+              <Text style={[styles.viewAll, { color: colors.primary }]}>
+                View Details
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {isTodayLoading ? (
+            <Card elevated style={styles.loadingCard}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                Loading workout...
+              </Text>
+            </Card>
+          ) : !today || today.items.length === 0 ? (
+            <Card elevated style={styles.emptyCard}>
+              <Ionicons
+                name="barbell-outline"
+                size={40}
+                color={colors.textTertiary}
+              />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No workout scheduled for today
+              </Text>
+              <TouchableOpacity
+                style={[styles.viewDetailsButton, { backgroundColor: colors.primary }]}
+                onPress={() => router.push("/(tabs)/workout-manager")}
+              >
+                <Text style={styles.viewDetailsButtonText}>Manage Workouts</Text>
+              </TouchableOpacity>
+            </Card>
+          ) : (
+            <>
+              <AnimatedCard
+                entering={FadeInDown.delay(200).springify()}
+                elevated
+                style={styles.workoutCard}
+              >
+                <View style={styles.workoutHeader}>
+                  <View style={[styles.workoutIconBadge, { backgroundColor: colors.primary + '15' }]}>
+                    <Ionicons name="barbell" size={24} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.workoutTitle, { color: colors.text }]}>
+                      {today.planTitle}
+                    </Text>
+                    <Text style={[styles.workoutSubtitle, { color: colors.textSecondary }]}>
+                      {today.items.length} exercise{today.items.length !== 1 ? 's' : ''} • {today.items.filter(i => i.completed).length} completed
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Progress Bar */}
+                <View style={[styles.progressBarContainer, { backgroundColor: colors.backgroundSecondary }]}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        backgroundColor: colors.primary,
+                        width: `${(today.items.filter(i => i.completed).length / today.items.length) * 100}%`,
+                      },
+                    ]}
+                  />
+                </View>
+
+                {/* Exercise List (First 3) */}
+                <View style={styles.exerciseList}>
+                  {today.items.slice(0, 3).map((item, idx) => (
+                    <TouchableOpacity
+                      key={item.subTitleId}
+                      style={styles.exerciseItem}
+                      onPress={async () => {
+                        await markDone({
+                          subTitleId: item.subTitleId,
+                          completed: !item.completed,
+                        });
+                      }}
+                    >
+                      <View
+                        style={[
+                          styles.checkbox,
+                          {
+                            backgroundColor: item.completed ? colors.primary : colors.backgroundSecondary,
+                            borderColor: item.completed ? colors.primary : colors.border,
+                          },
+                        ]}
+                      >
+                        {item.completed && (
+                          <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.exerciseName,
+                          {
+                            color: item.completed ? colors.textSecondary : colors.text,
+                            textDecorationLine: item.completed ? 'line-through' : 'none',
+                          },
+                        ]}
+                      >
+                        {item.subTitle}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                  {today.items.length > 3 && (
+                    <TouchableOpacity
+                      style={styles.viewMoreButton}
+                      onPress={() => router.push("/workout-details")}
+                    >
+                      <Text style={[styles.viewMoreText, { color: colors.primary }]}>
+                        +{today.items.length - 3} more exercises
+                      </Text>
+                      <Ionicons name="arrow-forward" size={16} color={colors.primary} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </AnimatedCard>
+            </>
+          )}
+        </Animated.View>
 
         {/* Quick Actions */}
         <Animated.View
@@ -581,5 +714,85 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "gray", // Replace with `colors.textTertiary` if dynamic styling is necessary
     marginTop: 8,
+  },
+
+  // Workout section styles
+  workoutCard: {
+    padding: 16,
+  },
+  workoutHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  workoutIconBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workoutTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  workoutSubtitle: {
+    fontSize: 13,
+    marginTop: 4,
+  },
+  progressBarContainer: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  exerciseList: {
+    gap: 12,
+  },
+  exerciseItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exerciseName: {
+    fontSize: 14,
+    flex: 1,
+  },
+  viewMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  viewMoreText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  viewDetailsButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  viewDetailsButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
