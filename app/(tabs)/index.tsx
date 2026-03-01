@@ -219,7 +219,7 @@ export default function Home() {
               </Text>
               <TouchableOpacity
                 style={[styles.viewDetailsButton, { backgroundColor: colors.primary }]}
-                onPress={() => router.push("/(tabs)/workout-manager")}
+                onPress={() => router.push("/(tabs)/workout-history")}
               >
                 <Text style={styles.viewDetailsButtonText}>Manage Workouts</Text>
               </TouchableOpacity>

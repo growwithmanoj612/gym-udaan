@@ -132,7 +132,7 @@ export default function WorkoutDetailsScreen() {
           <Animated.View entering={FadeIn.delay(600)}>
             <TouchableOpacity
               style={[styles.emptyButton, { backgroundColor: colors.primary }]}
-              onPress={() => router.push('/(tabs)/workout-manager')}
+              onPress={() => router.push('/(tabs)/workout-history')}
             >
               <Ionicons name="calendar" size={20} color="#FFFFFF" />
               <Text style={styles.emptyButtonText}>Manage Workouts</Text>

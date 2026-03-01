@@ -20,13 +20,13 @@ export default function TabLayout() {
 
   // Calculate the tab bar height based on platform and safe area insets
   const tabBarHeight = Platform.select({
-    ios: 60,
+    ios: 68, // Increased for iPhone to position tabs higher
     android: 60 + insets.bottom, // Add bottom inset for Android navigation bar
     default: 68,
   });
 
   const tabBarPaddingBottom = Platform.select({
-    ios: 28,
+    ios: 20, // Reduced to move tabs up on iPhone
     android: Math.max(insets.bottom, 8), // Use bottom inset or minimum padding
     default: 12,
   });
@@ -135,19 +135,7 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="services"
-          options={{
-            title: "Services",
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons
-                name={focused ? "storefront" : "storefront-outline"}
-                size={24}
-                color={color}
-              />
-            ),
-          }}
-        />
+       
         <Tabs.Screen
           name="attendance"
           options={{
@@ -161,6 +149,20 @@ export default function TabLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="workout-history"
+          options={{
+            title: "Workout",
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? "barbell" : "barbell-outline"}
+                size={28}
+                color={color}
+              />
+            ),
+          }}
+        />
+         
         <Tabs.Screen
           name="profile"
           options={{

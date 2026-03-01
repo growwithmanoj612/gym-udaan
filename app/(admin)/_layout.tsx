@@ -19,13 +19,13 @@ export default function TabLayout() {
 
   // Calculate the tab bar height based on platform and safe area insets
   const tabBarHeight = Platform.select({
-    ios: 60,
+    ios: 68,
     android: 60 + insets.bottom, // Add bottom inset for Android navigation bar
     default: 68,
   });
 
   const tabBarPaddingBottom = Platform.select({
-    ios: 28,
+    ios: 20,
     android: Math.max(insets.bottom, 8), // Use bottom inset or minimum padding
     default: 12,
   });

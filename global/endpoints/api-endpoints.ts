@@ -108,6 +108,7 @@ export const API_ENDPOINTS = {
     updateSubTitle: (subTitleId: number) => `${workoutPlansBase}/subtitle/${subTitleId}`, // Update exercise details
     createSubTitle: `${workoutPlansBase}/subtitle/create`, // Create new exercise subtitle
     updatePlanDay: (planId: number) => `${workoutPlansBase}/update/${planId}`, // Move plan to different day
+    searchLogs: (yearMonth: string) => `${workoutPlansBase}/logs-search?yearMonth=${yearMonth}`, // Search workout logs by month
   },
 
 

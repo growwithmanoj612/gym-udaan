@@ -11,6 +11,7 @@ import {
   IWeekProgressRes,
   IWorkOutPlanRes,
 } from '@/interfaces/workout.interface';
+import { toast } from '@/providers/toast-provider';
 import { create } from 'zustand';
 
 interface WorkoutState {
@@ -18,12 +19,14 @@ interface WorkoutState {
   today: ITodayWorkoutRes | null;
   isTodayLoading: boolean;
   todayError: string | null;
+  isLoading: boolean
 
   // ── All Workout Plans ──────────────────────────────────────────────────────
   allPlans: IAllWorkoutPlansRes | null;
   rawPlans: IWorkOutPlanRes[] | null; // Raw backend response
   isAllPlansLoading: boolean;
   allPlansError: string | null;
+  workOutLogs: ITodayWorkoutRes[]; //  Workout logs for search results
 
   // ── Week Progress ──────────────────────────────────────────────────────────
   weekProgress: IWeekProgressRes | null;
@@ -37,6 +40,8 @@ interface WorkoutState {
 
   /** Optimistically toggles completion + calls API */
   markDone: (req: IMarkDoneReq) => Promise<void>;
+
+  searchLogs: (yearMonth: string) => Promise<void>
 
   /** Sets a day override for an exercise */
   // setOverride: (req: IOverrideReq) => Promise<void>;
@@ -171,6 +176,34 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       set({ todayError: err?.response?.data?.message ?? 'Failed to update exercise' });
     }
   },
+
+    workOutLogs: [], 
+    isLoading: false,
+ 
+  
+    // Actions
+    searchLogs: async (yearMonth:string) => {
+      set({ isLoading: true });
+      try {
+        const response = await axios_auth.get(API_ENDPOINTS.workoutPlans.searchLogs(yearMonth));
+  
+        if (response?.data && response?.status === 200) {
+          const serverData=response?.data?.data
+          // update the stats
+          set({ workOutLogs: serverData });
+        }
+      } catch (error: any) {
+        const errorMessage = error.response?.data?.message || 'Failed to fetch workout logs';
+        toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: errorMessage,
+        });
+        throw error;
+      } finally {
+        set({ isLoading: false });
+      }
+    },
 
   // ── setOverride ────────────────────────────────────────────────────────────
   // setOverride: async (req: IOverrideReq) => {

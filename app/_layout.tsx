@@ -6,14 +6,14 @@ import {
 import { Slot, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { LogLevel, OneSignal } from "react-native-onesignal";
 import { Alert, Linking, Platform } from "react-native";
+import { LogLevel, OneSignal } from "react-native-onesignal";
 
+import { ForceUpdateModal } from "@/global/modal/force-update-modal";
+import { useVersionCheck } from "@/global/utils/version-check";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ToastProvider } from "@/providers/toast-provider";
-import { useAuthStore } from "@/store/useAuthStore"; 
-import { useVersionCheck } from "@/global/utils/version-check";
-import { ForceUpdateModal } from "@/global/modal/force-update-modal";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

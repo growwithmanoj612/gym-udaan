@@ -260,12 +260,19 @@ export default function WorkoutManagerScreen() {
         entering={FadeInUp.springify()}
         style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
       >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Workout Manager</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
             Customize your workout schedule
           </Text>
         </View>
+        <View style={{ width: 40 }} />
       </Animated.View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -819,13 +826,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerContent: {
     alignItems: 'center',
+    flex: 1,
   },
   headerTitle: {
     fontSize: 18,
