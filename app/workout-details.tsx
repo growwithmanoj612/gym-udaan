@@ -1,8 +1,10 @@
-import { Card } from '@/components/ui/card';
 import { Colors } from '@/constants/color';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useWorkoutStore } from '@/store/useWorkoutStore';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -11,63 +13,78 @@ import {
   Image,
   Linking,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import Animated, {
   BounceIn,
-  FadeIn,
+  Extrapolation,
   FadeInDown,
-  FadeInUp
+  FadeInUp,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
-const AnimatedCard = Animated.createAnimatedComponent(Card);
+
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export default function WorkoutDetailsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  
+  const insets = useSafeAreaInsets();
+
   const { today, isTodayLoading, fetchToday, markDone } = useWorkoutStore();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch data on mount
+  // Scroll animations
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(scrollY.value, [0, 50], [0, 1], Extrapolation.CLAMP);
+    return {
+      opacity,
+    };
+  });
+
   useEffect(() => {
     fetchToday();
   }, []);
 
-  // Pull to refresh
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchToday();
     setRefreshing(false);
   };
 
-  // Get today's day name
   const getTodayName = () => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return days[new Date().getDay()];
   };
 
-  // Sort exercises by sortOrder
   const sortedExercises = React.useMemo(() => {
     if (!today?.items) return [];
-    return [...today.items].sort(
-      (a, b) => a.sortOrder - b.sortOrder
-    );
+    return [...today.items].sort((a, b) => a.sortOrder - b.sortOrder);
   }, [today]);
 
-  // Calculate completion
   const completedCount = sortedExercises.filter(item => item.completed).length;
   const totalCount = sortedExercises.length;
   const completionPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const handleToggle = (subTitleId: number, currentStatus: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     markDone({
       subTitleId,
       completed: !currentStatus,
@@ -80,329 +97,277 @@ export default function WorkoutDetailsScreen() {
     }
   };
 
-  // Loading state
   if (isTodayLoading && !today) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Loading your workout...
+            Preparing your session...
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
-  // Empty state
   if (!today || today.items.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-        {/* Header */}
-        <Animated.View
-          entering={FadeInUp.springify()}
-          style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
-        >
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Today's Workout</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView edges={['top']} style={{ zIndex: 1 }}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
           </View>
-          <View style={{ width: 40 }} />
-        </Animated.View>
+        </SafeAreaView>
 
         <View style={styles.emptyContainer}>
-          <Animated.View entering={BounceIn.delay(200)} style={styles.emptyIconContainer}>
-            <Ionicons name="fitness-outline" size={80} color={colors.primary} />
+          <Animated.View entering={BounceIn.delay(200)} style={styles.emptyIconWrapper}>
+            <LinearGradient
+              colors={[colors.primaryLight, colors.primary]}
+              style={styles.emptyIconBg}
+            >
+              <Ionicons name="leaf" size={48} color="#FFF" />
+            </LinearGradient>
           </Animated.View>
-          <Animated.Text 
-            entering={FadeIn.delay(400)}
-            style={[styles.emptyTitle, { color: colors.text }]}
-          >
-            Rest Day! 😌
+          <Animated.Text entering={FadeInDown.delay(300)} style={[styles.emptyTitle, { color: colors.text }]}>
+            Rest Day
           </Animated.Text>
-          <Animated.Text 
-            entering={FadeIn.delay(500)}
-            style={[styles.emptyText, { color: colors.textSecondary }]}
-          >
-            No workout scheduled for today.{'\n'}
-            Check back tomorrow or customize your plan!
+          <Animated.Text entering={FadeInDown.delay(400)} style={[styles.emptyText, { color: colors.textSecondary }]}>
+            Your muscles are recovering.{'\n'}Take a break and stay hydrated.
           </Animated.Text>
-          <Animated.View entering={FadeIn.delay(600)}>
+          <Animated.View entering={FadeInDown.delay(500).springify()}>
             <TouchableOpacity
-              style={[styles.emptyButton, { backgroundColor: colors.primary }]}
+              style={[styles.primaryButton, { backgroundColor: colors.primary }]}
               onPress={() => router.push('/(tabs)/workout-history')}
             >
-              <Ionicons name="calendar" size={20} color="#FFFFFF" />
-              <Text style={styles.emptyButtonText}>Manage Workouts</Text>
+              <Text style={styles.primaryButtonText}>View Schedule</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* Header */}
-      <Animated.View
-        entering={FadeInUp.springify()}
-        style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Sticky Header */}
+      <AnimatedBlurView
+        tint={colorScheme === 'dark' ? 'dark' : 'light'}
+        intensity={80}
+        style={[
+          styles.stickyHeader,
+          { paddingTop: insets.top },
+          headerStyle
+        ]}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            {today.planTitle || 'Today\'s Workout'}
-          </Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            {getTodayName()} • {today.dayOfWeek}
+          <Text style={[styles.stickyHeaderTitle, { color: colors.text }]}>
+            {today.planTitle || 'Workout'}
           </Text>
         </View>
-        <View style={{ width: 40 }} />
-      </Animated.View>
+      </AnimatedBlurView>
 
-      <ScrollView 
+      {/* Back Button */}
+      <View style={[styles.floatingBackButton, { top: insets.top + 8 }]}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backButtonCircle, { backgroundColor: colors.card, shadowColor: colors.shadowDark }]}
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      <Animated.ScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
+            progressViewOffset={insets.top + 60}
           />
         }
       >
-        {/* Progress Card */}
-        <AnimatedCard
-          entering={FadeInDown.delay(100).springify()}
-          gradient
-          style={styles.progressCard}
-        >
-          <View style={styles.progressContent}>
-            <View style={styles.progressLeft}>
-              <View style={styles.progressIconContainer}>
-                <Ionicons name="trophy" size={32} color="#FFFFFF" />
+        {/* Main Hero Section */}
+        <Animated.View entering={FadeInUp.duration(600).springify()} style={[styles.heroSection, { marginTop: insets.top + 50 }]}>
+          <Text style={[styles.heroDate, { color: colors.primary }]}>
+            {getTodayName().toUpperCase()} • {today.dayOfWeek.toUpperCase()}
+          </Text>
+          <Text style={[styles.heroTitle, { color: colors.text }]}>
+            {today.planTitle || "Today's Plan"}
+          </Text>
+          <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
+            {totalCount} carefully crafted exercises for maximum results
+          </Text>
+        </Animated.View>
+
+        {/* Minimal Progress Ring Card */}
+        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.progressSection}>
+          <LinearGradient
+            colors={[colors.card, colors.backgroundSecondary]}
+            style={[styles.progressCardOuter, { borderColor: colors.borderLight, borderWidth: 1 }]}
+          >
+            <View style={styles.progressCardContent}>
+              <View style={styles.progressInfo}>
+                <Text style={[styles.progressTitle, { color: colors.text }]}>Daily Progress</Text>
+                <Text style={[styles.progressSubtitle, { color: colors.textSecondary }]}>
+                  {completedCount} of {totalCount} exercises done
+                </Text>
               </View>
-              <View>
-                <Text style={styles.progressLabel}>Your Progress</Text>
-                <Text style={styles.progressText}>
-                  {completedCount} of {totalCount} completed
+              <View style={styles.progressPercentageCircle}>
+                <Ionicons
+                  name={completionPercentage === 100 ? "trophy" : "flame"}
+                  size={20}
+                  color={completionPercentage === 100 ? colors.warning : colors.primary}
+                />
+                <Text style={[styles.progressPercentageText, { color: colors.text }]}>
+                  {completionPercentage}%
                 </Text>
               </View>
             </View>
-            <View style={styles.progressRight}>
-              <Text style={styles.progressPercentage}>{completionPercentage}%</Text>
-            </View>
-          </View>
-          <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBarBg, { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
-              <Animated.View
+            <View style={styles.progressBarWrapper}>
+              <View
+                style={[
+                  styles.progressBarTrack,
+                  { backgroundColor: colors.border },
+                ]}
+              />
+
+              <AnimatedLinearGradient
+                colors={[colors.gradientStart, colors.gradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
                 style={[
                   styles.progressBarFill,
-                  { 
-                    backgroundColor: '#FFFFFF',
-                    width: `${completionPercentage}%`,
-                  },
+                  { width: `${completionPercentage}%` }
+
                 ]}
               />
             </View>
-          </View>
-        </AnimatedCard>
 
-        {/* Exercise List */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Exercise Plan ({totalCount})
-          </Text>
+          </LinearGradient>
+        </Animated.View>
 
+        {/* Exercises List */}
+        <View style={styles.exercisesContainer}>
           {sortedExercises.map((exercise, index) => {
             const isCompleted = exercise?.completed;
             const imageUrl = exercise?.imageName;
 
             return (
-              <AnimatedCard
+              <Animated.View
                 key={exercise?.subTitleId}
-                entering={FadeInDown.delay(200 + index * 80).springify()}
-                elevated
+                entering={FadeInDown.delay(200 + index * 100).springify()}
                 style={[
-                  styles.exerciseCard,
-                  {
-                    borderLeftWidth: 4,
-                    borderLeftColor: isCompleted ? colors.success : colors.primary,
-                    backgroundColor: colors.card,
-                  },
+                  styles.exerciseWrapper,
+                  { backgroundColor: colors.card, shadowColor: colors.shadow },
+                  isCompleted && { opacity: 0.8 }
                 ]}
               >
-                {/* Completion Badge Overlay */}
-                {isCompleted && (
-                  <Animated.View 
-                    entering={BounceIn}
-                    style={[styles.completionBadge, { backgroundColor: colors.success }]}
-                  >
-                    <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
-                    <Text style={styles.completionBadgeText}>Done</Text>
-                  </Animated.View>
-                )}
-
-                {/* Exercise Header */}
-                <View style={styles.exerciseHeader}>
-                  <View style={styles.exerciseHeaderLeft}>
-                    <TouchableOpacity
-                      onPress={() => handleToggle(exercise?.subTitleId, exercise?.completed)}
-                      style={[
-                        styles.checkbox,
-                        {
-                          backgroundColor: isCompleted ? colors.success : 'transparent',
-                          borderColor: isCompleted ? colors.success : colors.border,
-                          shadowColor: isCompleted ? colors.success : 'transparent',
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.3,
-                          shadowRadius: 4,
-                          elevation: isCompleted ? 3 : 0,
-                        },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      {isCompleted && (
-                        <Animated.View entering={BounceIn}>
-                          <Ionicons name="checkmark" size={20} color="#FFFFFF" />
-                        </Animated.View>
-                      )}
-                    </TouchableOpacity>
-                    <View style={styles.exerciseHeaderText}>
-                      <Text
-                        style={[
-                          styles.exerciseTitle,
-                          { color: colors.text },
-                          isCompleted && styles.completedText,
-                        ]}
-                        numberOfLines={2}
-                      >
-                        {exercise?.subTitle}
-                      </Text>
-                      <View style={styles.exerciseMeta}>
-                        <View style={[styles.orderBadge, { backgroundColor: colors.primary + '15' }]}>
-                          <Text style={[styles.orderText, { color: colors.primary }]}>
-                            #{exercise?.sortOrder}
-                          </Text>
-                        </View>
-                        <View style={[styles.statusBadge, { 
-                          backgroundColor: isCompleted ? colors.success + '15' : colors.warning + '15' 
-                        }]}>
-                          <Ionicons 
-                            name={isCompleted ? "checkmark-circle" : "time-outline"} 
-                            size={12} 
-                            color={isCompleted ? colors.success : colors.warning} 
-                          />
-                          <Text style={[styles.statusText, { 
-                            color: isCompleted ? colors.success : colors.warning 
-                          }]}>
-                            {isCompleted ? 'Completed' : 'Pending'}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Exercise Image */}
                 {imageUrl && (
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={{ uri: imageUrl }}
-                      style={styles.exerciseImage}
-                      resizeMode="cover"
+                  <View style={styles.exerciseImageContainer}>
+                    <Image source={{ uri: imageUrl }} style={styles.exerciseImage} />
+                    {/* Dark gradient for text readability if over image, or just style */}
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.6)']}
+                      style={styles.imageGradient}
                     />
-                    {/* Image Overlay for Completed */}
-                    {isCompleted && (
-                      <View style={styles.imageOverlay}>
-                        <View style={styles.imageOverlayIcon}>
-                          <Ionicons name="checkmark-circle" size={48} color="#FFFFFF" />
-                        </View>
-                      </View>
+
+                    {exercise?.tutorialLink && (
+                      <TouchableOpacity
+                        style={styles.playButton}
+                        onPress={() => handleOpenTutorial(exercise.tutorialLink)}
+                        activeOpacity={0.8}
+                      >
+                        <BlurView intensity={60} tint="dark" style={styles.playButtonBlur}>
+                          <Ionicons name="play" size={24} color="#FFF" style={{ marginLeft: 3 }} />
+                        </BlurView>
+                      </TouchableOpacity>
                     )}
                   </View>
                 )}
 
-                {/* Exercise Actions */}
-                <View style={styles.exerciseActions}>
-                  {/* Tutorial Link */}
-                  {exercise?.tutorialLink && (
-                    <TouchableOpacity
-                      onPress={() => handleOpenTutorial(exercise?.tutorialLink)}
-                      style={[styles.tutorialButton, { 
-                        backgroundColor: colors.primary + '10',
-                        borderColor: colors.primary + '30',
-                        borderWidth: 1,
-                      }]}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="play-circle" size={20} color={colors.primary} />
-                      <Text style={[styles.tutorialButtonText, { color: colors.primary }]}>
-                        Watch Tutorial
+                <View style={styles.exerciseContent}>
+                  <View style={styles.exerciseTextRow}>
+                    <View style={[
+                      styles.orderBadgeSmall,
+                      { backgroundColor: isCompleted ? colors.success + '20' : colors.primaryLight + '20' }
+                    ]}>
+                      <Text style={[
+                        styles.orderBadgeSmallText,
+                        { color: isCompleted ? colors.success : colors.primaryDark }
+                      ]}>
+                        {exercise.sortOrder < 10 ? `0${exercise.sortOrder}` : exercise.sortOrder}
                       </Text>
-                      <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Toggle Button */}
-                  <TouchableOpacity
-                    onPress={() => handleToggle(exercise?.subTitleId, exercise?.completed)}
-                    style={[
-                      styles.actionButton,
-                      {
-                        backgroundColor: isCompleted 
-                          ? colors.backgroundSecondary 
-                          : colors.primary,
-                        borderWidth: isCompleted ? 1 : 0,
-                        borderColor: colors.border,
-                      },
-                    ]}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons 
-                      name={isCompleted ? "refresh" : "checkmark-circle"} 
-                      size={22} 
-                      color={isCompleted ? colors.text : "#FFFFFF"} 
-                    />
-                    <Text
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={[styles.exerciseTitle, { color: colors.text }, isCompleted && styles.completedTextTitle]}>
+                        {exercise?.subTitle}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => handleToggle(exercise?.subTitleId, isCompleted)}
+                      activeOpacity={0.7}
                       style={[
-                        styles.actionButtonText,
-                        { color: isCompleted ? colors.text : "#FFFFFF" },
+                        styles.checkCircle,
+                        { borderColor: isCompleted ? colors.success : colors.borderLight },
+                        isCompleted && { backgroundColor: colors.success, borderColor: colors.success }
                       ]}
                     >
-                      {isCompleted ? 'Mark Incomplete' : 'Mark Complete'}
+                      {isCompleted && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => handleToggle(exercise?.subTitleId, isCompleted)}
+                    activeOpacity={0.8}
+                    style={[
+                      styles.toggleBtnFullWidth,
+                      { backgroundColor: isCompleted ? colors.borderLight + '60' : colors.primary }
+                    ]}
+                  >
+                    <Ionicons
+                      name={isCompleted ? "checkmark-circle" : "ellipse-outline"}
+                      size={20}
+                      color={isCompleted ? colors.textSecondary : '#FFF'}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={[
+                      styles.toggleBtnTextFullWidth,
+                      { color: isCompleted ? colors.textSecondary : '#FFF' }
+                    ]}>
+                      {isCompleted ? 'Completed' : 'Mark as Done'}
                     </Text>
                   </TouchableOpacity>
                 </View>
-              </AnimatedCard>
+              </Animated.View>
             );
           })}
         </View>
 
-        {/* Motivational Footer */}
         {completionPercentage === 100 && (
-          <AnimatedCard
-            entering={FadeInDown.delay(400).springify()}
-            style={[styles.motivationCard, { backgroundColor: colors.success + '15' }]}
-          >
-            <Ionicons name="trophy" size={48} color={colors.success} />
-            <Text style={[styles.motivationTitle, { color: colors.text }]}>
-              Workout Complete! 🎉
-            </Text>
-            <Text style={[styles.motivationText, { color: colors.textSecondary }]}>
-              Great job! You've completed all exercises for today.
-            </Text>
-          </AnimatedCard>
+          <Animated.View entering={BounceIn.delay(300)} style={styles.celebrationContainer}>
+            <LinearGradient
+              colors={[colors.successLight, colors.background]}
+              style={styles.celebrationCard}
+            >
+              <View style={styles.celebrationIcon}>
+                <Ionicons name="star" size={32} color={colors.warning} />
+              </View>
+              <Text style={[styles.celebrationTitle, { color: colors.text }]}>Amazing Job!</Text>
+              <Text style={[styles.celebrationText, { color: colors.textSecondary }]}>
+                You've crushed today's routine. Rest well!
+              </Text>
+            </LinearGradient>
+          </Animated.View>
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+    </View>
   );
 }
 
@@ -414,52 +379,278 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
   },
   loadingText: {
-    fontSize: 16,
     marginTop: 16,
+    fontSize: 16,
     fontWeight: '500',
+    letterSpacing: 0.5,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+  },
+  floatingBackButton: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 10,
+  },
+  backButtonCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  stickyHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 5,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(150,150,150,0.2)',
+  },
+  headerContent: {
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerContent: {
+  stickyHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  heroSection: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
+  },
+  heroDate: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+  heroTitle: {
+    fontSize: 34,
+    fontWeight: '800',
+    lineHeight: 40,
+    marginBottom: 8,
+  },
+  heroSubtitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    lineHeight: 24,
+  },
+  progressSection: {
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
+  progressCardOuter: {
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 4,
+  },
+  progressCardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  progressInfo: {
+    flex: 1,
+  },
+  progressTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  progressSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  progressPercentageCircle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(120,120,120,0.05)',
+  },
+  progressPercentageText: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  progressBarWrapper: {
+    height: 8,
+    borderRadius: 4,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  progressBarTrack: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.5,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  exercisesContainer: {
+    paddingHorizontal: 20,
+    gap: 20,
+  },
+  exerciseWrapper: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  exerciseImageContainer: {
+    height: 220,
+    width: '100%',
+    position: 'relative',
+    backgroundColor: '#F0F0F0',
+  },
+  exerciseImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  imageGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+  },
+  exerciseOrderBadge: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  badgeBlur: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  exerciseOrderBadgeText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  playButton: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -30 }, { translateY: -30 }],
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  playButtonBlur: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerTitle: {
+  exerciseContent: {
+    padding: 20,
+  },
+  exerciseTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  exerciseTitle: {
     fontSize: 20,
     fontWeight: '700',
-    marginBottom: 2,
+    lineHeight: 28,
   },
-  headerSubtitle: {
-    fontSize: 13,
-    fontWeight: '500',
+  completedTextTitle: {
+    textDecorationLine: 'line-through',
+    opacity: 0.6,
+  },
+  checkCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 16,
+  },
+  toggleBtnFullWidth: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 16,
+    marginTop: 8,
+  },
+  toggleBtnTextFullWidth: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  orderBadgeSmall: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  orderBadgeSmallText: {
+    fontSize: 15,
+    fontWeight: '800',
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 30,
+    marginTop: -40,
   },
-  emptyIconContainer: {
+  emptyIconWrapper: {
     marginBottom: 24,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  emptyIconBg: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyTitle: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '800',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -469,253 +660,56 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 32,
   },
-  emptyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-  },
-  emptyButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  progressCard: {
-    margin: 20,
-    padding: 20,
-  },
-  progressContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  progressLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  progressIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressLabel: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-    marginBottom: 4,
-  },
-  progressText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  progressRight: {
-    alignItems: 'center',
-  },
-  progressPercentage: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  progressBarContainer: {
-    marginTop: 8,
-  },
-  progressBarBg: {
-    height: 10,
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 5,
-  },
-  section: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  exerciseCard: {
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 2,
-  },
-  exerciseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  exerciseHeaderLeft: {
-    flexDirection: 'row',
-    gap: 12,
-    flex: 1,
-  },
-  checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  exerciseHeaderText: {
-    flex: 1,
-    gap: 8,
-  },
-  exerciseTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    lineHeight: 24,
-  },
-  completedText: {
-    textDecorationLine: 'line-through',
-    opacity: 0.6,
-  },
-  orderBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  orderText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  imageContainer: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
-    backgroundColor: '#F3F4F6',
-  },
-  exerciseImage: {
-    width: '100%',
-    height: '100%',
-  },
-  exerciseDetails: {
-    gap: 12,
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  detailText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  tutorialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginTop: 4,
-  },
-  tutorialButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  actionButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  completionBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 20,
+  primaryButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 100,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-    zIndex: 10,
+    shadowRadius: 16,
+    elevation: 6,
   },
-  completionBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
+  primaryButtonText: {
+    color: '#FFF',
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
-  exerciseMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  imageOverlayIcon: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 50,
-    padding: 8,
-  },
-  exerciseActions: {
-    flexDirection: 'column',
-    gap: 10,
-    marginTop: 12,
-  },
-  motivationCard: {
-    marginHorizontal: 20,
+  celebrationContainer: {
+    paddingHorizontal: 20,
+    marginTop: 30,
     marginBottom: 20,
+  },
+  celebrationCard: {
+    borderRadius: 24,
     padding: 24,
     alignItems: 'center',
-    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
   },
-  motivationTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: 12,
+  celebrationIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  celebrationTitle: {
+    fontSize: 24,
+    fontWeight: '800',
     marginBottom: 8,
   },
-  motivationText: {
+  celebrationText: {
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
-  },
+  }
 });

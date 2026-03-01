@@ -4,10 +4,13 @@ import { IAttendanceDetails } from "@/global/interfaces";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAttendanceStore } from "@/store/useAttendanceStore";
 import { Ionicons } from "@expo/vector-icons";
-import { endOfMonth, format, parseISO, startOfMonth } from "date-fns";
+import { endOfMonth, format, parseISO } from "date-fns";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,37 +26,39 @@ export default function Attendance() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  // Zustand store hooks
-  const { search, attendances } = useAttendanceStore();
-
-  // State for month selection
-  const [selectedYearMonth, setSelectedYearMonth] = useState(format(new Date(), "yyyy-MM")); // Defaults to current month
+  const { search, attendances, isLoading } = useAttendanceStore();
+  const [selectedYearMonth, setSelectedYearMonth] = useState(format(new Date(), "yyyy-MM"));
 
   useEffect(() => {
-    // Fetch attendance data for the selected month
     search(selectedYearMonth);
   }, [selectedYearMonth]);
-  
 
-   // Helper function to calculate the number of days in a month
-  const getDaysInMonth = (month: string) => {
-    const date = parseISO(`${month}-01`); // Parse input month string like "2025-12"
-    const startDate = startOfMonth(date);
-    const endDate = endOfMonth(date);
-
-    return endDate.getDate(); // Total days in the month
+  const handlePrevMonth = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const prev = new Date(selectedYearMonth);
+    prev.setMonth(prev.getMonth() - 1);
+    setSelectedYearMonth(format(prev, "yyyy-MM"));
   };
-  // Calculate attendance stats
+
+  const handleNextMonth = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const next = new Date(selectedYearMonth);
+    next.setMonth(next.getMonth() + 1);
+    setSelectedYearMonth(format(next, "yyyy-MM"));
+  };
+
+  const getDaysInMonth = (month: string) => {
+    const date = parseISO(`${month}-01`);
+    return endOfMonth(date).getDate();
+  };
+
   const calculateStats = (attendanceList: IAttendanceDetails[]) => {
     const daysInMonth = getDaysInMonth(selectedYearMonth);
     const presentDays = attendanceList.filter((a) => a.checkInTime).length;
     const absentDays = daysInMonth - presentDays;
     const attendancePercentage = (presentDays / daysInMonth) * 100;
-
-    // Check if selected month is current month
     const isCurrentMonth = selectedYearMonth === format(new Date(), "yyyy-MM");
-    
-    // Motivational message based on attendance
+
     let motivationMessage = "";
     let motivationIcon: any = "star";
     if (attendancePercentage >= 90) {
@@ -77,7 +82,7 @@ export default function Attendance() {
       totalDays: daysInMonth,
       presentDays,
       absentDays,
-      attendancePercentage: isNaN(attendancePercentage) ? 0 : attendancePercentage.toFixed(1),
+      attendancePercentage: isNaN(attendancePercentage) ? 0 : Number(attendancePercentage.toFixed(1)),
       isCurrentMonth,
       motivationMessage,
       motivationIcon,
@@ -86,196 +91,180 @@ export default function Attendance() {
 
   const stats = calculateStats(attendances);
 
- 
-
-  const getShiftColor = (shiftType:any) => {
-    switch (shiftType) {
-      case "MORNING":
-        return "#F59E0B";
-      case "EVENING":
-        return "#8B5CF6";
-      default:
-        return colors.primary;
-    }
-  };
-  // Helper function to convert time to 12-hour format with AM/PM
   const formatToStandardTime = (time: string | null) => {
-    if (!time) return "Not Available";
+    if (!time) return "--:--";
     const [hour, minute] = time.split(":");
     const hourInt = parseInt(hour, 10);
-    const standardHour = hourInt % 12 || 12; // Converts 13 -> 1, etc.; handles 12 as is
+    const standardHour = hourInt % 12 || 12;
     const amPm = hourInt >= 12 ? "PM" : "AM";
     return `${standardHour}:${minute} ${amPm}`;
   };
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
       {/* Header */}
       <Animated.View
         entering={FadeInUp.springify()}
         style={[styles.header, { backgroundColor: colors.card }]}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.backgroundSecondary }]}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </View>
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Attendance History
-        </Text>
-        <View style={{ width: 40 }} />
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Attendance History</Text>
+        <View style={{ width: 44 }} />
       </Animated.View>
 
-      {/* Month Selector */}
-      <View style={styles.monthSelectorContainer}>
-        <TouchableOpacity
-          onPress={() =>
-            setSelectedYearMonth(
-              format(
-                new Date(new Date(selectedYearMonth).setMonth(new Date(selectedYearMonth).getMonth() - 1)),
-                "yyyy-MM"
-              )
-            )
-          }
-          style={styles.arrowButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.selectedYearMonth, { color: colors.text }]}>
-          {format(new Date(`${selectedYearMonth}-01`), "MMMM yyyy")}
-        </Text>
-        <TouchableOpacity
-          onPress={() =>
-            setSelectedYearMonth(
-              format(
-                new Date(new Date(selectedYearMonth).setMonth(new Date(selectedYearMonth).getMonth() + 1)),
-                "yyyy-MM"
-              )
-            )
-          }
-          style={styles.arrowButton}
-        >
-          <Ionicons name="arrow-forward" size={24} color={colors.text} />
-        </TouchableOpacity>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Month Selector Pill */}
+        <Animated.View entering={FadeInDown.delay(50).springify()} style={styles.monthSelectorWrapper}>
+          <View style={[styles.monthPill, { backgroundColor: colors.card }]}>
+            <TouchableOpacity onPress={handlePrevMonth} style={styles.monthPillButton}>
+              <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <View style={styles.monthPillTextContainer}>
+              <Ionicons name="calendar-outline" size={16} color={colors.primary} style={styles.calendarIcon} />
+              <Text style={[styles.monthPillText, { color: colors.text }]}>
+                {format(new Date(`${selectedYearMonth}-01`), "MMMM yyyy")}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handleNextMonth} style={styles.monthPillButton}>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
         {/* Stats Overview */}
-        <Animated.View
-          entering={FadeInDown.delay(100).springify()}
-          style={styles.statsContainer}
-        >
-          <Card gradient style={styles.statsCard}>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Ionicons name="calendar" size={28} color="#FFFFFF" />
-                <Text style={styles.statValue}>{stats.totalDays}</Text>
-                <Text style={styles.statLabel}>Total Days</Text>
+        <Animated.View entering={FadeInDown.delay(100).springify()}>
+          <Card gradient style={styles.statsCardWrapper}>
+            <View style={styles.statsHeader}>
+              <View style={styles.statsHeaderIcon}>
+                <Ionicons name="analytics" size={20} color="#FFFFFF" />
               </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Ionicons name="checkmark-circle" size={28} color="#FFFFFF" />
-                <Text style={styles.statValue}>{stats.presentDays}</Text>
-                <Text style={styles.statLabel}>Present</Text>
+              <Text style={styles.statsHeaderTitle}>Monthly Summary</Text>
+            </View>
+
+            <View style={styles.statsGrid}>
+              <View style={styles.statCell}>
+                <Text style={styles.statCellLabel}>Total Days</Text>
+                <Text style={styles.statCellValue}>{stats.totalDays}</Text>
               </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Ionicons 
-                  name={stats.isCurrentMonth ? "hourglass-outline" : "close-circle"} 
-                  size={28} 
-                  color="#FFFFFF" 
-                />
-                <Text style={styles.statValue}>{stats.absentDays}</Text>
-                <Text style={styles.statLabel}>
-                  {stats.isCurrentMonth ? "Remaining" : "Absent"}
-                </Text>
+              <View style={styles.statDividerVertical} />
+              <View style={styles.statCell}>
+                <Text style={styles.statCellLabel}>Rate</Text>
+                <Text style={styles.statCellValue}>{stats.attendancePercentage}%</Text>
               </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Ionicons name="analytics" size={28} color="#FFFFFF" />
-                <Text style={styles.statValue}>{stats.attendancePercentage}%</Text>
-                <Text style={styles.statLabel}>Rate</Text>
+              <View style={styles.statDividerHorizontal} />
+              <View style={[styles.statDividerHorizontal, { left: "50%" }]} />
+              <View style={styles.statCell}>
+                <Text style={styles.statCellLabel}>Present</Text>
+                <Text style={styles.statCellValue}>{stats.presentDays}</Text>
+              </View>
+              <View style={styles.statDividerVerticalBottom} />
+              <View style={styles.statCell}>
+                <Text style={styles.statCellLabel}>{stats.isCurrentMonth ? "Remaining" : "Absent"}</Text>
+                <Text style={styles.statCellValue}>{stats.absentDays}</Text>
               </View>
             </View>
-            
-            {/* Motivational Message */}
+
             <View style={styles.motivationContainer}>
-              <Ionicons name={stats.motivationIcon} size={20} color="#FFFFFF" />
+              <View style={styles.motivationIconBadge}>
+                <Ionicons name={stats.motivationIcon} size={16} color={colors.primary} />
+              </View>
               <Text style={styles.motivationText}>{stats.motivationMessage}</Text>
             </View>
           </Card>
         </Animated.View>
 
-        {/* Attendance List */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Recent Check-ins
-          </Text>
-
-          {attendances.map((record, index) => (
-            <AnimatedCard
-              key={record.id}
-              entering={FadeInDown.delay(200 + index * 50).springify()}
-              elevated
-              style={styles.attendanceCard}
-            >
-              <View style={styles.dateSection}>
-                <View style={styles.dateIcon}>
-                  <Text style={styles.dateDay}>
-                    {new Date(record?.createdDate?.split('T')[0])?.getDate()}
-                  </Text>
-                  <Text style={styles.dateMonth}>
-                    {new Date(record?.createdDate?.split('T')[0])?.toLocaleDateString("en-US", {
-                      month: "short",
-                    })}
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.recordDate, { color: colors.text }]}>
-                    {new Date(record?.createdDate?.split('T')[0])?.toLocaleDateString("en-US", {
-                      weekday: "long",
-                    })}
-                  </Text>
-               
-                </View>
-             
-              </View>
-
-              <View style={styles.timeRow}>
-                <View style={styles.timeItem}>
-                  <Ionicons name="log-in" size={16} color={colors.success} />
-                  <Text
-                    style={[styles.timeLabel, { color: colors.textSecondary }]}
-                  >
-                    Check In
-                  </Text>
-                  <Text style={[styles.timeValue, { color: colors.text }]}>
-
-  {formatToStandardTime(
-                      record?.checkInTime?.split("T")[1] || null
-                    )}
-
-                    
-                  </Text>
-                </View>
-                <View style={styles.timeSeparator} />
-                <View style={styles.timeItem}>
-                  <Ionicons name="log-out" size={16} color={colors.error} />
-                  <Text
-                    style={[styles.timeLabel, { color: colors.textSecondary }]}
-                  >
-                    Check Out
-                  </Text>
-                  <Text style={[styles.timeValue, { color: colors.text }]}>
-                    {formatToStandardTime(
-                      record?.checkOutTime?.split("T")[1] || null
-                    )}
-                  </Text>
-                </View>
-              </View>
-            </AnimatedCard>
-          ))}
+        {/* Recent Check-ins */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Check-ins</Text>
+          <View style={[styles.badgeContainer, { backgroundColor: colors.primary + "15" }]}>
+            <Text style={[styles.badgeText, { color: colors.primary }]}>{attendances.length}</Text>
+          </View>
         </View>
+
+        {isLoading ? (
+          <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading attendance...</Text>
+          </Animated.View>
+        ) : attendances.length === 0 ? (
+          <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.emptyContainer}>
+            <View style={[styles.emptyIconWrapper, { backgroundColor: colors.background }]}>
+              <Ionicons name="calendar-clear-outline" size={48} color={colors.textTertiary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No Records Found</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+              You haven't checked in during {format(new Date(`${selectedYearMonth}-01`), "MMMM yyyy")} yet.
+            </Text>
+          </Animated.View>
+        ) : (
+          <View style={styles.listContainer}>
+            {attendances.map((record, index) => {
+              const recordDate = new Date(record?.createdDate?.split('T')[0] || new Date());
+              return (
+                <AnimatedCard
+                  key={record.id || index.toString()}
+                  entering={FadeInDown.delay(200 + index * 50).springify()}
+                  style={styles.attendanceCard}
+                  elevated
+                >
+                  {/* Left Status Indicator */}
+                  <View style={[styles.statusIndicator, { backgroundColor: record.checkOutTime ? colors.success : colors.warning }]} />
+
+                  <View style={styles.cardContent}>
+                    <View style={styles.dateSection}>
+                      <View style={[styles.dateBox, { backgroundColor: colors.primary + "15" }]}>
+                        <Text style={[styles.dateDay, { color: colors.primary }]}>{recordDate.getDate()}</Text>
+                        <Text style={[styles.dateMonth, { color: colors.primary }]}>
+                          {recordDate.toLocaleDateString("en-US", { month: "short" })}
+                        </Text>
+                      </View>
+                      <View style={styles.dateInfo}>
+                        <Text style={[styles.recordDayName, { color: colors.text }]}>
+                          {recordDate.toLocaleDateString("en-US", { weekday: "long" })}
+                        </Text>
+                        <Text style={[styles.recordSub, { color: colors.textSecondary }]}>
+                          {record.checkOutTime ? "Completed Session" : "In Progress"}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.timeSection}>
+                      <View style={[styles.timeBlock, { backgroundColor: colors.background }]}>
+                        <View style={styles.timeIconWrap}>
+                          <Ionicons name="log-in-outline" size={16} color={colors.success} />
+                        </View>
+                        <View>
+                          <Text style={[styles.timeTitle, { color: colors.textSecondary }]}>Check-in</Text>
+                          <Text style={[styles.timeValue, { color: colors.text }]}>
+                            {formatToStandardTime(record?.checkInTime?.split("T")[1] || null)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={[styles.timeBlock, { backgroundColor: colors.background }]}>
+                        <View style={styles.timeIconWrap}>
+                          <Ionicons name="log-out-outline" size={16} color={colors.warning} />
+                        </View>
+                        <View>
+                          <Text style={[styles.timeTitle, { color: colors.textSecondary }]}>Check-out</Text>
+                          <Text style={[styles.timeValue, { color: colors.text }]}>
+                            {formatToStandardTime(record?.checkOutTime?.split("T")[1] || null)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </AnimatedCard>
+              );
+            })}
+          </View>
+        )}
+
       </ScrollView>
     </View>
   );
@@ -290,160 +279,320 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === "ios" ? 60 : 40,
     paddingBottom: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    zIndex: 10,
   },
-  backButton: {
-    width: 40,
-    height: 40,
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },
+  backButton: {
+    padding: 0,
+  },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
+    fontWeight: "700",
+    letterSpacing: -0.5,
   },
-  statsContainer: {
-    padding: 20,
+  scrollContent: {
+    paddingBottom: 40,
   },
-  statsCard: {
-    padding: 16,
+  monthSelectorWrapper: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 16,
+    alignItems: "center",
   },
-  statsRow: {
+  monthPill: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    borderRadius: 30,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  statItem: {
-    flex: 1,
+  monthPillButton: {
+    padding: 10,
+    borderRadius: 20,
+  },
+  monthPillTextContainer: {
+    flexDirection: "row",
     alignItems: "center",
+    minWidth: 140,
+    justifyContent: "center",
     gap: 6,
   },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "bold",
+  calendarIcon: {
+    marginTop: -2,
+  },
+  monthPillText: {
+    fontSize: 15,
+    fontWeight: "600",
+    letterSpacing: -0.3,
+  },
+  statsCardWrapper: {
+    marginHorizontal: 20,
+    padding: 20,
+    borderRadius: 24,
+    overflow: "hidden",
+  },
+  statsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 20,
+  },
+  statsHeaderIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statsHeaderTitle: {
     color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
   },
-  statLabel: {
-    fontSize: 10,
-    color: "rgba(255,255,255,0.9)",
-    textAlign: "center",
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 20,
+    padding: 16,
+    position: "relative",
   },
-  statDivider: {
+  statCell: {
+    width: "50%",
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: "center",
+  },
+  statCellLabel: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 6,
+  },
+  statCellValue: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  statDividerVertical: {
+    position: "absolute",
+    top: 16,
+    bottom: "50%",
+    left: "50%",
     width: 1,
-    height: 35,
-    backgroundColor: "rgba(255,255,255,0.3)",
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+  statDividerVerticalBottom: {
+    position: "absolute",
+    top: "50%",
+    bottom: 16,
+    left: "50%",
+    width: 1,
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+  statDividerHorizontal: {
+    position: "absolute",
+    top: "50%",
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
   motivationContainer: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    marginTop: 20,
+    gap: 12,
+  },
+  motivationIconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,107,53,0.15)",
+    alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.2)",
   },
   motivationText: {
+    flex: 1,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#FFFFFF",
+    fontWeight: "700",
+    color: "#1A1A1A",
   },
-  section: {
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    marginTop: 28,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 16,
+    fontWeight: "700",
+    letterSpacing: -0.4,
+  },
+  badgeContainer: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 20,
+  },
+  emptyIconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   attendanceCard: {
+    padding: 0,
+    marginBottom: 16,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  statusIndicator: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 6,
+    zIndex: 1,
+  },
+  cardContent: {
     padding: 16,
-    marginBottom: 12,
+    paddingLeft: 22,
   },
   dateSection: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
   },
-  dateIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: "#FF6B3515",
+  dateBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: 16,
   },
   dateDay: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#FF6B35",
+    fontSize: 20,
+    fontWeight: "800",
+    lineHeight: 24,
   },
   dateMonth: {
     fontSize: 11,
-    color: "#FF6B35",
+    fontWeight: "700",
     textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  recordDate: {
+  dateInfo: {
+    flex: 1,
+  },
+  recordDayName: {
     fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 2,
+    fontWeight: "700",
+    marginBottom: 4,
   },
-  recordNepDate: {
-    fontSize: 12,
+  recordSub: {
+    fontSize: 13,
+    fontWeight: "500",
   },
-  shiftBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  shiftText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  timeRow: {
+  timeSection: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
   },
-  timeItem: {
+  timeBlock: {
     flex: 1,
+    flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    padding: 12,
+    borderRadius: 12,
+    gap: 12,
   },
-  timeLabel: {
+  timeIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.03)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  timeTitle: {
     fontSize: 11,
+    fontWeight: "600",
+    marginBottom: 2,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   timeValue: {
     fontSize: 14,
-    fontWeight: "600",
-  },
-  timeSeparator: {
-    width: 1,
-    height: 30,
-    backgroundColor: "rgba(0,0,0,0.1)",
-    marginHorizontal: 16,
-  },
-  monthSelectorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
-  },
-  arrowButton: {
-    padding: 10,
-  },
-  selectedYearMonth: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
 });

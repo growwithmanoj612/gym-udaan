@@ -129,11 +129,16 @@ export default function MemberServicesScreen() {
 
           {/* Plan Header */}
           <View style={styles.planCardHeader}>
-            <View style={styles.planIconContainer}>
+            <View style={[styles.planIconContainer, { backgroundColor: colors.primary + '15' }]}>
               <Ionicons name="barbell" size={24} color={colors.primary} />
             </View>
             <View style={styles.planHeaderInfo}>
-              <Text style={[styles.planTitle, { color: colors.text }]} numberOfLines={2}>
+              <Text
+                style={[styles.planTitle, { color: colors.text }]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {item?.planName}
               </Text>
               <View style={styles.durationContainer}>
@@ -176,7 +181,7 @@ export default function MemberServicesScreen() {
                 </Text>
               </View>
             )}
-            
+
             <View style={styles.finalPriceRow}>
               <View style={styles.priceColumn}>
                 <Text style={[styles.finalPriceLabel, { color: colors.textSecondary }]}>
@@ -210,13 +215,13 @@ export default function MemberServicesScreen() {
 
     return (
       <Animated.View
-        entering={FadeInRight.delay(index * 80).duration(500).springify()}
+        entering={FadeInRight.delay(index * 60).duration(500).springify()}
         layout={Layout.springify()}
-        style={{ width: width - 40 }}
+        style={{ width: (width - 60) / 2 }}
       >
         <View
           style={[
-            styles.productCard,
+            styles.productCardGrid,
             {
               backgroundColor: colors.card,
               shadowColor: isDark ? '#000' : '#000',
@@ -224,66 +229,53 @@ export default function MemberServicesScreen() {
             },
           ]}
         >
-          {/* Product Header */}
-          <View style={styles.productCardHeader}>
-            <View style={[styles.productIconContainer, { backgroundColor: colors.primary + '15' }]}>
+          {/* Top Section: Icon & Category */}
+          <View style={styles.productCardTop}>
+            <View style={[styles.productIconContainerGrid, { backgroundColor: colors.primary + '15' }]}>
               <Ionicons name="nutrition" size={22} color={colors.primary} />
             </View>
-            
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.productTitle, { color: colors.text }]} numberOfLines={2}>
-                {item?.name}
-              </Text>
-              
-              {/* Category Badge */}
-              <View style={[styles.categoryBadgeSmall, { backgroundColor: colors.backgroundSecondary }]}>
-                <Text style={[styles.categoryBadgeText, { color: colors.primary }]}>
-                  {item?.category}
-                </Text>
-              </View>
-            </View>
-
-            {/* Stock Status */}
-            <View style={[styles.stockStatusBadge, { backgroundColor: stockColor + '20' }]}>
+            <View style={[styles.stockStatusBadgeGrid, { backgroundColor: stockColor + '15' }]}>
               <View style={[styles.stockDot, { backgroundColor: stockColor }]} />
-              <Text style={[styles.stockStatusText, { color: stockColor }]}>
-                {stockStatus}
+              <Text style={[styles.stockStatusText, { color: stockColor }]} numberOfLines={1}>
+                {stockStatus === 'In Stock' ? 'In Stock' : stockStatus}
               </Text>
             </View>
           </View>
 
-          {/* Stock Info */}
-          {!isOutOfStock && (
-            <View style={styles.stockInfoContainer}>
-              <Ionicons name="archive-outline" size={16} color={colors.textSecondary} />
-              <Text style={[styles.stockInfoText, { color: colors.textSecondary }]}>
-                {item?.stockQuantity} {item?.primaryUnit} in stock
+          {/* Main Info */}
+          <View style={styles.productContentMain}>
+            <Text
+              style={[styles.productTitleGrid, { color: colors.text }]}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              {item?.name}
+            </Text>
+
+            <View style={[styles.categoryBadgeGrid, { backgroundColor: colors.backgroundSecondary }]}>
+              <Text style={[styles.categoryBadgeText, { color: colors.primary }]} numberOfLines={1}>
+                {item?.category}
               </Text>
             </View>
-          )}
+          </View>
 
           {/* Price Section */}
-          <View style={[styles.productPricingSection, { borderTopColor: colors.border }]}>
-            <View>
-              <Text style={[styles.priceLabel, { color: colors.textTertiary }]}>
-                Selling Price
-              </Text>
-              <View style={styles.priceRow}>
-                <Text style={[styles.currencySymbol, { color: colors.text }]}>Rs </Text>
-                <Text style={[styles.productPrice, { color: colors.text }]}>
+          <View style={[styles.productPricingSectionGrid, { borderTopColor: colors.border }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.priceLabel, { color: colors.textTertiary }]}>Price</Text>
+              <View style={styles.priceRowGrid}>
+                <Text style={[styles.currencySymbolGrid, { color: colors.text }]}>Rs. </Text>
+                <Text
+                  style={[styles.productPriceGrid, { color: colors.text }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
                   {item?.sp?.toLocaleString()}
-                </Text>
-                <Text style={[styles.perUnitText, { color: colors.textSecondary }]}>
-                  /{item?.primaryUnit}
                 </Text>
               </View>
             </View>
-
-            {isOutOfStock && (
-              <View style={styles.outOfStockBadge}>
-                <Text style={styles.outOfStockText}>OUT OF STOCK</Text>
-              </View>
-            )}
           </View>
         </View>
       </Animated.View>
@@ -406,9 +398,9 @@ export default function MemberServicesScreen() {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl 
-                refreshing={refreshing} 
-                onRefresh={onRefresh} 
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
                 tintColor={colors.primary}
                 colors={[colors.primary]}
               />
@@ -478,12 +470,14 @@ export default function MemberServicesScreen() {
               data={filteredProducts}
               renderItem={renderProductCard}
               keyExtractor={(item) => item?.id?.toString()}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={styles.gridContent}
+              numColumns={2}
+              columnWrapperStyle={styles.rowWrapper}
               showsVerticalScrollIndicator={false}
               refreshControl={
-                <RefreshControl 
-                  refreshing={refreshing} 
-                  onRefresh={onRefresh} 
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
                   tintColor={colors.primary}
                   colors={[colors.primary]}
                 />
@@ -502,7 +496,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  
+
   // Header Styles
   header: {
     flexDirection: 'row',
@@ -573,6 +567,15 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 20,
     gap: 20,
+  },
+  gridContent: {
+    padding: 20,
+    paddingBottom: 40,
+    gap: 20,
+  },
+  rowWrapper: {
+    gap: 20,
+    justifyContent: 'flex-start',
   },
 
   // Plan Card Styles
@@ -741,116 +744,98 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Product Card Styles
-  productCard: {
+  // Product Grid Card Styles
+  productCardGrid: {
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
+    height: 220,
+    display: 'flex',
+    flexDirection: 'column',
   },
-  productCardHeader: {
+  productCardTop: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  productIconContainer: {
-    width: 44,
-    height: 44,
+  productIconContainerGrid: {
+    width: 40,
+    height: 40,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  productTitle: {
-    fontSize: 18,
+  stockStatusBadgeGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+    maxWidth: '55%',
+  },
+  productContentMain: {
+    flex: 1,
+  },
+  productTitleGrid: {
+    fontSize: 16,
     fontWeight: '700',
     letterSpacing: -0.2,
+    lineHeight: 20,
     marginBottom: 8,
-    lineHeight: 24,
   },
-  categoryBadgeSmall: {
+  categoryBadgeGrid: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   categoryBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  stockStatusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    gap: 6,
+    letterSpacing: 0.3,
   },
   stockDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   stockStatusText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
   },
-  stockInfoContainer: {
+  productPricingSectionGrid: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-  },
-  stockInfoText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  productPricingSection: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    paddingTop: 16,
+    paddingTop: 12,
     borderTopWidth: 1,
   },
   priceLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
-    marginBottom: 6,
+    marginBottom: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  priceRow: {
+  priceRowGrid: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 4,
+    gap: 2,
   },
-  currencySymbol: {
-    fontSize: 20,
+  currencySymbolGrid: {
+    fontSize: 12,
     fontWeight: '700',
   },
-  productPrice: {
-    fontSize: 32,
+  productPriceGrid: {
+    fontSize: 20,
     fontWeight: '800',
-    letterSpacing: -1,
-  },
-  perUnitText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  outOfStockBadge: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    letterSpacing: -0.5,
   },
   outOfStockText: {
     color: '#EF4444',

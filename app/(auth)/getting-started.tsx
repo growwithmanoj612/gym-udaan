@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button";
 import { Colors } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -11,32 +11,22 @@ import {
   Image,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import Animated, {
-  FadeIn,
   FadeInDown,
+  FadeInRight,
   FadeInUp,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withSequence,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-const SPACING = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
-};
 
 export default function GettingStarted() {
   const router = useRouter();
@@ -47,210 +37,145 @@ export default function GettingStarted() {
 
   const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
 
-  const logoScale = useSharedValue(1);
-  const glowOpacity = useSharedValue(0.3);
+  const floatValue = useSharedValue(0);
 
   useEffect(() => {
-    logoScale.value = withRepeat(
+    floatValue.value = withRepeat(
       withSequence(
-        withSpring(1.05, { damping: 3, stiffness: 60 }),
-        withSpring(1, { damping: 3, stiffness: 60 })
+        withTiming(-8, { duration: 2500 }),
+        withTiming(8, { duration: 2500 })
       ),
       -1,
-      false
-    );
-
-    glowOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.6, { duration: 2000 }),
-        withTiming(0.3, { duration: 2000 })
-      ),
-      -1,
-      false
+      true
     );
   }, []);
 
-  const logoAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: logoScale.value }],
-  }));
-
-  const glowAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
+  const floatingStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatValue.value }],
   }));
 
   const features = [
     {
-      icon: "fitness-outline" as const,
-      title: "Track Attendance",
-      description: "Monitor your gym visits effortlessly",
+      icon: "scan-outline" as const,
+      title: "Smart Attendance",
+      description: "Quick check-ins & real-time gym capacity",
     },
     {
-      icon: "card-outline" as const,
-      title: "Membership Status",
-      description: "View plans and renewal dates",
+      icon: "ribbon-outline" as const,
+      title: "Membership Hub",
+      description: "Track expiry dates and renew instantly",
     },
     {
-      icon: "notifications-outline" as const,
-      title: "Stay Updated",
-      description: "Get important gym announcements",
+      icon: "flash-outline" as const,
+      title: "Pushed to Excel",
+      description: "Motivation & live gym updates",
     },
   ];
 
   const handleGetStarted = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     await completeOnboarding();
     router.replace("/(auth)/tenant-select");
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={
-          isDark
-            ? ["rgba(255, 107, 53, 0.08)", "transparent"]
-            : ["rgba(255, 107, 53, 0.06)", "transparent"]
-        }
-        style={styles.backgroundGradient}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 0.6 }}
-      />
+      {/* Background Ambience */}
+      <View style={StyleSheet.absoluteFill}>
+        <LinearGradient
+          colors={
+            isDark
+              ? [colors.background, colors.primary + '1A', colors.background]
+              : [colors.background, colors.primary + '12', colors.background]
+          }
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        {/* Abstract shapes for premium feel */}
+        <Animated.View style={[styles.glowSphere, styles.glowTop, { backgroundColor: colors.primary }]} />
+        <Animated.View style={[styles.glowSphere, styles.glowBottom, { backgroundColor: colors.primaryLight }]} />
+      </View>
 
-      <View style={[styles.content, { paddingTop: insets.top + SPACING.xxl }]}>
+      <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
+        {/* Header / Logo */}
+        <Animated.View entering={FadeInDown.duration(800).springify()} style={styles.header}>
+          <View style={[styles.logoDot, { backgroundColor: colors.primary }]} />
+          <Text style={[styles.headerBrandText, { color: colors.text }]}>Gym Udaan</Text>
+        </Animated.View>
+
+        {/* Hero Section */}
         <View style={styles.heroSection}>
-          <Animated.View style={[styles.glowContainer, glowAnimatedStyle]}>
-            <LinearGradient
-              colors={["rgba(255, 107, 53, 0.4)", "transparent"]}
-              style={styles.glowGradient}
-            />
-          </Animated.View>
-
-          <Animated.View
-            entering={FadeIn.duration(800)}
-            style={[styles.logoWrapper, logoAnimatedStyle]}
-          >
-            <View
-              style={[
-                styles.logoContainer,
-                {
-                  shadowColor: colors.primary,
-                  backgroundColor: colors.card,
-                },
-              ]}
-            >
-              <Image
-                source={require("../../assets/images/gymudaanmobileapplogo.jpg")}
-                style={styles.logoImage}
-                resizeMode="cover"
-              />
+          <Animated.View style={floatingStyle}>
+            <View style={styles.logoImageWrapper}>
+              <View style={[styles.logoImageRing, { borderColor: colors.primary + '30', backgroundColor: colors.card }]}>
+                <Image
+                  source={require("../../assets/images/gymudaanmobileapplogo.jpg")}
+                  style={styles.logoImage}
+                  resizeMode="cover"
+                />
+              </View>
             </View>
           </Animated.View>
 
-          <Animated.Text
-            entering={FadeInUp.delay(200).duration(600)}
-            style={[styles.brandName, { color: colors.text }]}
-          >
-            GYM UDAAN
-          </Animated.Text>
-
-          <Animated.Text
-            entering={FadeInUp.delay(350).duration(600)}
-            style={[styles.tagline, { color: colors.textSecondary }]}
-          >
-            Your Personal Fitness Companion
-          </Animated.Text>
+          <Animated.View entering={FadeInUp.delay(300).duration(800).springify()} style={styles.titleWrapper}>
+            <Text style={[styles.titleText, { color: colors.text }]}>
+              Unlock Your{"\n"}
+              <Text style={{ color: colors.primary }}>Potential.</Text>
+            </Text>
+            <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
+              Your entire gym ecosystem, perfectly organized in one powerful application.
+            </Text>
+          </Animated.View>
         </View>
 
-        <Animated.View
-          entering={FadeInDown.delay(500).duration(600)}
-          style={styles.valueSection}
-        >
-          <View
-            style={[
-              styles.valueCard,
-              {
-                backgroundColor: isDark
-                  ? "rgba(255, 107, 53, 0.08)"
-                  : "rgba(255, 107, 53, 0.05)",
-                borderColor: isDark
-                  ? "rgba(255, 107, 53, 0.15)"
-                  : "rgba(255, 107, 53, 0.1)",
-              },
-            ]}
-          >
-            <Text style={[styles.valueText, { color: colors.text }]}>
-              Your gym membership, access, and updates — all in one place.
-            </Text>
-          </View>
-        </Animated.View>
-
-        <View style={styles.featuresSection}>
+        {/* Features List */}
+        <View style={styles.featuresList}>
           {features.map((feature, index) => (
             <Animated.View
               key={feature.title}
-              entering={FadeInDown.delay(650 + index * 100).duration(500)}
+              entering={FadeInRight.delay(500 + index * 100).duration(800).springify()}
               style={[
-                styles.featureItem,
-                { backgroundColor: colors.card, borderColor: colors.border },
+                styles.featureCard,
+                { backgroundColor: colors.card, borderColor: colors.border + '60' },
               ]}
             >
-              <View
-                style={[
-                  styles.featureIconWrapper,
-                  { backgroundColor: `${colors.primary}15` },
-                ]}
-              >
-                <Ionicons
-                  name={feature.icon}
-                  size={22}
-                  color={colors.primary}
-                />
+              <View style={[styles.featureIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                <Ionicons name={feature.icon} size={24} color={colors.primary} />
               </View>
-              <View style={styles.featureContent}>
+              <View style={styles.featureTextContent}>
                 <Text style={[styles.featureTitle, { color: colors.text }]}>
                   {feature.title}
                 </Text>
-                <Text
-                  style={[
-                    styles.featureDescription,
-                    { color: colors.textSecondary },
-                  ]}
-                >
+                <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
                   {feature.description}
                 </Text>
               </View>
             </Animated.View>
           ))}
         </View>
-      </View>
 
-      <Animated.View
-        entering={FadeInUp.delay(950).duration(500)}
-        style={[
-          styles.bottomSection,
-          {
-            paddingBottom: insets.bottom + SPACING.xl,
-            backgroundColor: colors.background,
-          },
-        ]}
-      >
-        <Button
-          title="Continue"
-          onPress={handleGetStarted}
-          variant="primary"
-          size="large"
-          style={styles.ctaButton}
-        />
+        <View style={{ flex: 1 }} />
 
-        <View style={styles.infoContainer}>
-          <Ionicons
-            name="information-circle-outline"
-            size={16}
-            color={colors.textTertiary}
-          />
-          <Text style={[styles.infoText, { color: colors.textTertiary }]}>
-            Account provided by your gym via gymudaan.com
+        {/* Footer CTA */}
+        <Animated.View
+          entering={FadeInUp.delay(900).duration(600).springify()}
+          style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}
+        >
+          <TouchableOpacity
+            style={[styles.primaryButton, { backgroundColor: colors.text }]}
+            onPress={handleGetStarted}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.primaryButtonText, { color: colors.background }]}>Get Started</Text>
+            <Ionicons name="arrow-forward" size={20} color={colors.background} />
+          </TouchableOpacity>
+
+          <Text style={[styles.footerDisclaimer, { color: colors.textTertiary }]}>
+            Powered by gymudaan.com
           </Text>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      </View>
     </View>
   );
 }
@@ -259,124 +184,145 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backgroundGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: SCREEN_HEIGHT * 0.5,
+  glowSphere: {
+    position: 'absolute',
+    width: SCREEN_WIDTH * 1.5,
+    height: SCREEN_WIDTH * 1.5,
+    borderRadius: SCREEN_WIDTH * 0.75,
+    opacity: 0.12,
+  },
+  glowTop: {
+    top: -SCREEN_WIDTH * 0.6,
+    right: -SCREEN_WIDTH * 0.6,
+  },
+  glowBottom: {
+    bottom: -SCREEN_WIDTH * 0.5,
+    left: -SCREEN_WIDTH * 0.5,
   },
   content: {
     flex: 1,
-    paddingHorizontal: SPACING.xxl,
+    paddingHorizontal: 28,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 40,
+  },
+  logoDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  headerBrandText: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
   heroSection: {
-    alignItems: "center",
-    paddingTop: SPACING.xxxl,
+    alignItems: 'flex-start',
+    marginBottom: 40,
   },
-  glowContainer: {
-    position: "absolute",
-    top: -20,
-    width: 200,
-    height: 200,
-    alignItems: "center",
-    justifyContent: "center",
+  logoImageWrapper: {
+    marginBottom: 24,
   },
-  glowGradient: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 100,
-  },
-  logoWrapper: {
-    marginBottom: SPACING.xl,
-  },
-  logoContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 32,
-    overflow: "hidden",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
+  logoImageRing: {
+    padding: 8,
+    borderRadius: 40,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
     shadowRadius: 20,
-    elevation: 15,
+    elevation: 8,
   },
   logoImage: {
-    width: "100%",
-    height: "100%",
+    width: 72,
+    height: 72,
+    borderRadius: 32,
   },
-  brandName: {
-    fontSize: 32,
-    fontWeight: "800",
-    letterSpacing: 3,
-    marginBottom: SPACING.sm,
+  titleWrapper: {
+    gap: 16,
   },
-  tagline: {
-    fontSize: 16,
-    fontWeight: "500",
-    letterSpacing: 0.3,
+  titleText: {
+    fontSize: 52,
+    fontWeight: '900',
+    lineHeight: 56,
+    letterSpacing: -1.5,
   },
-  valueSection: {
-    marginTop: SPACING.xxxl,
+  subtitleText: {
+    fontSize: 18,
+    fontWeight: '500',
+    lineHeight: 28,
+    maxWidth: '95%',
+    opacity: 0.8,
   },
-  valueCard: {
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
-    borderRadius: 16,
+  featuresList: {
+    gap: 16,
+  },
+  featureCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 18,
+    borderRadius: 24,
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  valueText: {
-    fontSize: 17,
-    fontWeight: "600",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  featuresSection: {
-    marginTop: SPACING.xxl,
-    gap: SPACING.md,
-  },
-  featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: SPACING.lg,
+  featureIconContainer: {
+    width: 52,
+    height: 52,
     borderRadius: 16,
-    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
   },
-  featureIconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.lg,
-  },
-  featureContent: {
+  featureTextContent: {
     flex: 1,
   },
   featureTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 2,
+    fontSize: 17,
+    fontWeight: '800',
+    marginBottom: 4,
+    letterSpacing: -0.2,
   },
   featureDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  footer: {
+    alignItems: 'center',
+    paddingTop: 24,
+  },
+  primaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    paddingVertical: 20,
+    borderRadius: 100,
+    gap: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  primaryButtonText: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  footerDisclaimer: {
     fontSize: 13,
-    fontWeight: "500",
-  },
-  bottomSection: {
-    paddingHorizontal: SPACING.xxl,
-    paddingTop: SPACING.lg,
-  },
-  ctaButton: {
-    width: "100%",
-  },
-  infoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: SPACING.lg,
-    gap: SPACING.sm,
-  },
-  infoText: {
-    fontSize: 13,
-    fontWeight: "500",
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    opacity: 0.7,
   },
 });

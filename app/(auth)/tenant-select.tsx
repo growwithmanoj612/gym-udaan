@@ -4,6 +4,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useBusinessStore } from "@/store/useBusinessStore";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -19,26 +20,18 @@ import {
   View,
 } from "react-native";
 import Animated, {
-  FadeIn,
   FadeInDown,
   FadeInUp,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
+  withSequence,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-const SPACING = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
-};
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -57,6 +50,7 @@ const GymCard = ({ gym, onPress, index, colors }: GymCardProps) => {
   }));
 
   const handlePressIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     scale.value = withSpring(0.96, { damping: 15, stiffness: 400 });
   };
 
@@ -66,23 +60,26 @@ const GymCard = ({ gym, onPress, index, colors }: GymCardProps) => {
 
   return (
     <AnimatedTouchable
-      entering={FadeInDown.delay(200 + index * 80).duration(400)}
+      entering={FadeInDown.delay(150 + index * 80).duration(500).springify()}
       style={[
         styles.gymCard,
         {
           backgroundColor: colors.card,
-          borderColor: colors.border,
+          borderColor: colors.border + '60',
           shadowColor: colors.shadow,
         },
         animatedStyle,
       ]}
-      onPress={onPress}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onPress();
+      }}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      activeOpacity={1}
+      activeOpacity={0.9}
     >
       <LinearGradient
-        colors={[`${colors.primary}05`, 'transparent']}
+        colors={[`${colors.primary}08`, 'transparent']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.cardGradient}
@@ -91,8 +88,8 @@ const GymCard = ({ gym, onPress, index, colors }: GymCardProps) => {
           <View
             style={[
               styles.gymAvatar,
-              { 
-                backgroundColor: `${colors.primary}15`,
+              {
+                backgroundColor: `${colors.primary}10`,
                 borderColor: `${colors.primary}20`,
               },
             ]}
@@ -118,7 +115,7 @@ const GymCard = ({ gym, onPress, index, colors }: GymCardProps) => {
               {gym?.businessName?.replaceAll("_", " ")}
             </Text>
             <View style={styles.gymLocationRow}>
-              <View style={[styles.locationBadge, { backgroundColor: `${colors.primary}10` }]}>
+              <View style={[styles.locationBadge, { backgroundColor: `${colors.primary}12` }]}>
                 <Ionicons
                   name="location"
                   size={12}
@@ -129,18 +126,13 @@ const GymCard = ({ gym, onPress, index, colors }: GymCardProps) => {
                 style={[styles.gymLocation, { color: colors.textSecondary }]}
                 numberOfLines={1}
               >
-                {gym?.businessAddress || "No address"}
+                {gym?.businessAddress || "Unknown location"}
               </Text>
             </View>
           </View>
 
-          <View
-            style={[
-              styles.selectIndicator,
-              { backgroundColor: colors.primary },
-            ]}
-          >
-            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+          <View style={[styles.selectIndicator, { backgroundColor: colors.text }]}>
+            <Ionicons name="arrow-forward" size={18} color={colors.background} />
           </View>
         </View>
       </LinearGradient>
@@ -163,9 +155,23 @@ export default function TenantSelect() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
 
+  const pulseValue = useSharedValue(1);
+
   useEffect(() => {
     fetchGyms();
+    pulseValue.value = withRepeat(
+      withSequence(
+        withTiming(1.05, { duration: 1500 }),
+        withTiming(1, { duration: 1500 })
+      ),
+      -1,
+      true
+    );
   }, []);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseValue.value }],
+  }));
 
   const filteredGyms = gyms.filter((gym) =>
     `${gym?.businessName} ${gym?.businessAddress}`
@@ -181,37 +187,28 @@ export default function TenantSelect() {
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <LinearGradient
-          colors={
-            isDark
-              ? ["rgba(255, 107, 53, 0.08)", "transparent"]
-              : ["rgba(255, 107, 53, 0.05)", "transparent"]
-          }
-          style={styles.backgroundGradient}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 0.5 }}
-        />
+        <View style={StyleSheet.absoluteFill}>
+          <LinearGradient
+            colors={
+              isDark
+                ? [colors.background, colors.primary + '1A', colors.background]
+                : [colors.background, colors.primary + '12', colors.background]
+            }
+            style={StyleSheet.absoluteFill}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+        </View>
         <View style={styles.loadingContainer}>
-          <View
-            style={[
-              styles.loadingIconWrapper,
-              { backgroundColor: `${colors.primary}15` },
-            ]}
-          >
-            <View style={styles.loadingIconInner}>
-              <Ionicons name="barbell" size={36} color={colors.primary} />
-            </View>
-            <ActivityIndicator 
-              size="large" 
-              color={colors.primary} 
-              style={styles.loadingSpinner}
-            />
-          </View>
+          <Animated.View style={[styles.loadingIconWrapper, { backgroundColor: `${colors.primary}15` }, pulseStyle]}>
+            <Ionicons name="compass" size={40} color={colors.primary} style={{ position: 'absolute' }} />
+            <ActivityIndicator size="large" color={colors.primary} style={{ position: 'absolute' }} />
+          </Animated.View>
           <Text style={[styles.loadingText, { color: colors.text }]}>
-            Finding your gyms...
+            Locating Facilities...
           </Text>
           <Text style={[styles.loadingSubtext, { color: colors.textSecondary }]}>
-            Please wait a moment
+            Connecting to the Gym Udaan network
           </Text>
         </View>
       </View>
@@ -220,79 +217,64 @@ export default function TenantSelect() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={
-          isDark
-            ? ["rgba(255, 107, 53, 0.08)", "transparent"]
-            : ["rgba(255, 107, 53, 0.05)", "transparent"]
-        }
-        style={styles.backgroundGradient}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 0.5 }}
-      />
+      <View style={StyleSheet.absoluteFill}>
+        <LinearGradient
+          colors={
+            isDark
+              ? [colors.background, colors.primary + '10', colors.background]
+              : [colors.background, colors.primary + '0A', colors.background]
+          }
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <Animated.View style={[styles.glowSphere, styles.glowTop, { backgroundColor: colors.primary }]} />
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + SPACING.xl },
+          { paddingTop: insets.top + 20 },
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <Animated.View
-          entering={FadeIn.duration(600)}
-          style={styles.header}
-        >
-          <View
-            style={[
-              styles.headerIconWrapper,
-              { 
-                backgroundColor: `${colors.primary}12`,
-                borderColor: `${colors.primary}20`,
-              },
-            ]}
-          >
+        {/* Header Section */}
+        <Animated.View entering={FadeInDown.duration(800).springify()} style={styles.header}>
+          <View style={[styles.headerIconWrapper, { backgroundColor: colors.card, borderColor: colors.border + '60' }]}>
             <LinearGradient
-              colors={[`${colors.primary}25`, `${colors.primary}15`]}
+              colors={[`${colors.primary}20`, `${colors.primary}05`]}
               style={styles.headerIconGradient}
             >
-              <Ionicons name="barbell-sharp" size={36} color={colors.primary} />
+              <Ionicons name="barbell-sharp" size={32} color={colors.primary} />
             </LinearGradient>
           </View>
-
           <Text style={[styles.title, { color: colors.text }]}>
-            Choose Your Gym
+            Select Your{"\n"}
+            <Text style={{ color: colors.primary }}>Gym.</Text>
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Select your gym to get started with your fitness journey
+            select the gym where your membership is active to proceed.
           </Text>
         </Animated.View>
 
-        {/* Search Bar */}
+        {/* Search Input */}
         <Animated.View
-          entering={FadeInUp.delay(200).duration(500)}
+          entering={FadeInUp.delay(200).duration(600).springify()}
           style={[
             styles.searchContainer,
             {
               backgroundColor: colors.card,
-              borderColor: isFocused ? colors.primary : colors.border,
-              shadowColor: isFocused ? colors.primary : colors.shadow,
+              borderColor: isFocused ? colors.primary : colors.border + '60',
+              shadowColor: isFocused ? colors.primary : '#000',
             },
           ]}
         >
-          <View style={[
-            styles.searchIconWrapper,
-            { backgroundColor: isFocused ? `${colors.primary}12` : 'transparent' }
-          ]}>
-            <Ionicons
-              name="search"
-              size={20}
-              color={isFocused ? colors.primary : colors.textTertiary}
-            />
+          <View style={[styles.searchIconWrapper, { backgroundColor: isFocused ? `${colors.primary}15` : 'transparent' }]}>
+            <Ionicons name="search" size={20} color={isFocused ? colors.primary : colors.textTertiary} />
           </View>
           <TextInput
-            placeholder="Search for your gym..."
+            placeholder="Search by name or city..."
             placeholderTextColor={colors.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -301,64 +283,44 @@ export default function TenantSelect() {
             style={[styles.searchInput, { color: colors.text }]}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity 
-              onPress={() => setSearchQuery("")}
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.selectionAsync();
+                setSearchQuery("");
+              }}
               style={[styles.clearButton, { backgroundColor: `${colors.textTertiary}15` }]}
             >
-              <Ionicons
-                name="close"
-                size={16}
-                color={colors.textTertiary}
-              />
+              <Ionicons name="close" size={16} color={colors.textTertiary} />
             </TouchableOpacity>
           )}
         </Animated.View>
-
-      
 
         {/* Gym List */}
         <View style={styles.gymsContainer}>
           {filteredGyms.length === 0 ? (
             <Animated.View
-              entering={FadeIn.delay(200).duration(400)}
+              entering={FadeInDown.delay(200).duration(500).springify()}
               style={[
                 styles.emptyState,
-                { backgroundColor: colors.card, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border + '60' },
               ]}
             >
               <LinearGradient
                 colors={[`${colors.primary}08`, 'transparent']}
                 style={styles.emptyStateGradient}
               >
-                <View
-                  style={[
-                    styles.emptyIconWrapper,
-                    { backgroundColor: `${colors.primary}12` },
-                  ]}
-                >
-                  <Ionicons
-                    name="fitness-outline"
-                    size={40}
-                    color={colors.textTertiary}
-                  />
+                <View style={[styles.emptyIconWrapper, { backgroundColor: `${colors.primary}12` }]}>
+                  <Ionicons name="map-outline" size={36} color={colors.textTertiary} />
                 </View>
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                  No gyms found
+                  No Facilities Found
                 </Text>
-                <Text
-                  style={[styles.emptySubtitle, { color: colors.textSecondary }]}
-                >
-                  {searchQuery 
-                    ? "Try adjusting your search terms"
-                    : "Can't find your gym? Contact your gym owner to register on GymUdaan"
+                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                  {searchQuery
+                    ? "We couldn't find a match. Adjust your search parameters."
+                    : "There are currently no gym facilities listed in the network."
                   }
                 </Text>
-                <View style={[styles.emptyHintBox, { backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}20` }]}>
-                  <Ionicons name="information-circle" size={16} color={colors.primary} />
-                  <Text style={[styles.emptyHint, { color: colors.primary }]}>
-                    Need help? Contact support
-                  </Text>
-                </View>
               </LinearGradient>
             </Animated.View>
           ) : (
@@ -382,62 +344,64 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backgroundGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 400,
+  glowSphere: {
+    position: 'absolute',
+    width: SCREEN_WIDTH * 1.5,
+    height: SCREEN_WIDTH * 1.5,
+    borderRadius: SCREEN_WIDTH * 0.75,
+    opacity: 0.1,
+  },
+  glowTop: {
+    top: -SCREEN_WIDTH * 0.8,
+    left: -SCREEN_WIDTH * 0.8,
   },
   scrollContent: {
-    paddingHorizontal: SPACING.xxl,
-    paddingBottom: SPACING.xxxl + SPACING.xl,
+    paddingHorizontal: 28,
+    paddingBottom: 60,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: SPACING.xxxl,
+    paddingHorizontal: 40,
   },
   loadingIconWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: SPACING.xl,
-    position: 'relative',
-  },
-  loadingIconInner: {
-    position: 'absolute',
-  },
-  loadingSpinner: {
-    position: 'absolute',
+    marginBottom: 24,
   },
   loadingText: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: SPACING.xs,
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   loadingSubtext: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "500",
   },
-
-  // Header
   header: {
-    alignItems: "center",
-    marginBottom: SPACING.xxl + SPACING.xs,
+    alignItems: "flex-start",
+    marginBottom: 40,
+    paddingTop: 16,
   },
   headerIconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: SPACING.lg,
-    borderWidth: 1.5,
+    marginBottom: 20,
+    borderWidth: 1,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   headerIconGradient: {
     width: '100%',
@@ -446,78 +410,63 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 32,
-    fontWeight: "800",
-    letterSpacing: -0.8,
-    marginBottom: SPACING.sm,
-    textAlign: 'center',
+    fontSize: 42,
+    fontWeight: "900",
+    lineHeight: 46,
+    letterSpacing: -1,
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "500",
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: SPACING.xl,
+    lineHeight: 24,
+    maxWidth: '96%',
+    opacity: 0.85,
   },
-
-  // Search
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: 16,
-    borderWidth: 2,
-    marginBottom: SPACING.lg,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    marginBottom: 32,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 3,
   },
   searchIconWrapper: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.xs,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    fontWeight: "500",
-    paddingVertical: SPACING.sm,
+    fontWeight: "600",
+    paddingVertical: 10,
   },
   clearButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // Results
-  resultsHeader: {
-    marginBottom: SPACING.md,
-  },
-  resultsCount: {
-    fontSize: 13,
-    fontWeight: "600",
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
-  // Gyms
   gymsContainer: {
-    gap: SPACING.md,
+    gap: 16,
   },
   gymCard: {
-    borderRadius: 18,
-    borderWidth: 1.5,
+    borderRadius: 24,
+    borderWidth: 1,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.06,
     shadowRadius: 16,
-    elevation: 5,
+    elevation: 4,
     overflow: 'hidden',
   },
   cardGradient: {
@@ -526,16 +475,16 @@ const styles = StyleSheet.create({
   gymCardContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: SPACING.lg,
+    padding: 20,
   },
   gymAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
+    width: 64,
+    height: 64,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    borderWidth: 2,
+    borderWidth: 1.5,
   },
   gymAvatarImage: {
     width: "100%",
@@ -549,91 +498,73 @@ const styles = StyleSheet.create({
   },
   gymInfo: {
     flex: 1,
-    marginLeft: SPACING.lg,
+    marginLeft: 16,
   },
   gymName: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: SPACING.sm,
-    letterSpacing: -0.2,
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 6,
+    letterSpacing: -0.3,
   },
   gymLocationRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: SPACING.sm,
+    gap: 8,
   },
   locationBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   gymLocation: {
-    fontSize: 13,
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: "600",
     flex: 1,
-    lineHeight: 18,
   },
   selectIndicator: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-
-  // Empty State
   emptyState: {
     alignItems: "center",
-    borderRadius: 24,
-    borderWidth: 1.5,
+    borderRadius: 28,
+    borderWidth: 1,
     overflow: 'hidden',
-    marginTop: SPACING.xl,
+    marginTop: 16,
   },
   emptyStateGradient: {
     width: '100%',
-    padding: SPACING.xxxl + SPACING.md,
+    padding: 40,
     alignItems: 'center',
   },
   emptyIconWrapper: {
-    width: 88,
-    height: 88,
+    width: 80,
+    height: 80,
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: SPACING.xl,
+    marginBottom: 24,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: SPACING.sm,
-    letterSpacing: -0.3,
+    fontSize: 22,
+    fontWeight: "800",
+    marginBottom: 10,
+    letterSpacing: -0.5,
   },
   emptySubtitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "500",
     textAlign: "center",
-    lineHeight: 22,
-    marginBottom: SPACING.lg,
-    paddingHorizontal: SPACING.md,
-  },
-  emptyHintBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: SPACING.md,
-  },
-  emptyHint: {
-    fontSize: 13,
-    fontWeight: "600",
+    lineHeight: 24,
+    opacity: 0.8,
   },
 });

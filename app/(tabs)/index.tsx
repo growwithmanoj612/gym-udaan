@@ -10,6 +10,7 @@ import { useWorkoutStore } from "@/store/useWorkoutStore";
 
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -87,8 +88,8 @@ export default function Home() {
 
   const handleCallGym = () => {
     // priority is for customercare if not than owner
-    const phoneNumber = selectedTenantDetails?.customerCareNumber   || selectedTenantDetails?.businessPhone;
-    
+    const phoneNumber = selectedTenantDetails?.customerCareNumber || selectedTenantDetails?.businessPhone;
+
     if (phoneNumber) {
       Linking.openURL(`tel:${phoneNumber}`);
     } else {
@@ -265,6 +266,7 @@ export default function Home() {
                       key={item.subTitleId}
                       style={styles.exerciseItem}
                       onPress={async () => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                         await markDone({
                           subTitleId: item.subTitleId,
                           completed: !item.completed,

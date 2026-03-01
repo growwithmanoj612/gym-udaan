@@ -5,41 +5,35 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { TENANT_KEY, useAuthStore } from "@/store/useAuthStore";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-    Alert,
-    Dimensions,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Animated, {
-    FadeIn,
-    FadeInDown,
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-const SPACING = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
-};
 
 export default function Login() {
   const router = useRouter();
@@ -60,11 +54,27 @@ export default function Login() {
   const [errors, setErrors] = useState({ phone: "", password: "" });
 
   const buttonScale = useSharedValue(1);
+  const floatValue = useSharedValue(0);
+
+  useEffect(() => {
+    floatValue.value = withRepeat(
+      withSequence(
+        withTiming(-8, { duration: 2500 }),
+        withTiming(8, { duration: 2500 })
+      ),
+      -1,
+      true
+    );
+  }, []);
+
+  const floatingStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatValue.value }],
+  }));
 
   const validateForm = () => {
     let valid = true;
     const newErrors = { phone: "", password: "" };
-    
+
     if (!phoneNumber.trim()) {
       newErrors.phone = "Phone number is required";
       valid = false;
@@ -82,10 +92,14 @@ export default function Login() {
     }
 
     setErrors(newErrors);
+    if (!valid) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
     return valid;
   };
 
   const handleLogin = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (!validateForm()) return;
 
     if (!selectedTenantId) {
@@ -115,6 +129,7 @@ export default function Login() {
       });
 
       if (role) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (role === AppUserRoles.ROLE_MEMBER) {
           router.replace("/(tabs)");
         } else if (role === AppUserRoles.ROLE_ADMIN) {
@@ -124,6 +139,7 @@ export default function Login() {
         }
       }
     } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.error("Login error:", error);
     }
   };
@@ -137,6 +153,7 @@ export default function Login() {
   };
 
   const handleChangeGym = () => {
+    Haptics.selectionAsync();
     router.push("/(auth)/tenant-select");
   };
 
@@ -149,112 +166,91 @@ export default function Login() {
       style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Clean Background Gradient */}
-      <LinearGradient
-        colors={
-          isDark
-            ? [colors.background, colors.background]
-            : ["#FFF8F5", "#FFF0E8", colors.background]
-        }
-        style={styles.backgroundGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      />
+      <View style={StyleSheet.absoluteFill}>
+        <LinearGradient
+          colors={
+            isDark
+              ? [colors.background, colors.primary + '10', colors.background]
+              : [colors.background, colors.primary + '0A', colors.background]
+          }
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <Animated.View style={[styles.glowSphere, styles.glowTop, { backgroundColor: colors.primary }]} />
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + SPACING.xxxl },
+          { paddingTop: insets.top + 20 },
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <Animated.View entering={FadeIn.duration(600)} style={styles.header}>
+        {/* Header Section */}
+        <Animated.View entering={FadeInDown.duration(800).springify()} style={styles.header}>
+          <Animated.View style={[styles.headerIconWrapper, { backgroundColor: colors.card, borderColor: colors.border + '60' }, floatingStyle]}>
+            <LinearGradient
+              colors={[`${colors.primary}20`, `${colors.primary}05`]}
+              style={styles.headerIconGradient}
+            >
+              <Ionicons name="lock-closed" size={32} color={colors.primary} />
+            </LinearGradient>
+          </Animated.View>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Welcome{"\n"}
+            <Text style={{ color: colors.primary }}>Back.</Text>
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Sign in below to access your fitness dashboard.
+          </Text>
+        </Animated.View>
+
+        {/* Selected Gym Badge */}
+        {selectedTenantDetails && (
           <Animated.View
-            entering={FadeIn.delay(200).duration(500)}
+            entering={FadeInDown.delay(200).duration(500).springify()}
             style={[
-              styles.logoWrapper,
+              styles.gymBadge,
               {
-                shadowColor: colors.primary,
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.25,
-                shadowRadius: 16,
+                backgroundColor: colors.card,
+                borderColor: colors.border + '50',
+                shadowColor: colors.shadow,
               },
             ]}
           >
-            <LinearGradient
-              colors={[colors.primary, "#FF8C5A"]}
-              style={styles.logoGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="barbell-sharp" size={36} color="#FFFFFF" />
-            </LinearGradient>
-          </Animated.View>
-
-          <Animated.Text
-            entering={FadeInUp.delay(300).duration(500)}
-            style={[styles.title, { color: colors.text }]}
-          >
-            Welcome Back
-          </Animated.Text>
-
-          {selectedTenantDetails ? (
-            <Animated.View
-              entering={FadeInDown.delay(400).duration(500)}
-              style={[
-                styles.gymBadge,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(255, 107, 53, 0.15)"
-                    : "rgba(255, 107, 53, 0.1)",
-                  borderColor: `${colors.primary}40`,
-                },
-              ]}
-            >
-              <View style={[styles.gymIconWrapper, { backgroundColor: colors.primary }]}>
-                <Ionicons name="barbell" size={12} color="#FFFFFF" />
-              </View>
-              <Text style={[styles.gymBadgeText, { color: colors.text }]}>
+            <View style={[styles.gymIconWrapper, { backgroundColor: colors.primary + '15' }]}>
+              <Ionicons name="business" size={16} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[styles.gymBadgeLabel, { color: colors.textTertiary }]}>Logging into</Text>
+              <Text style={[styles.gymBadgeText, { color: colors.text }]} numberOfLines={1}>
                 {selectedTenantDetails.businessName?.replaceAll("_", " ")}
               </Text>
-              <TouchableOpacity
-                onPress={handleChangeGym}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={styles.changeGymButton}
-              >
-                <Ionicons name="swap-horizontal" size={16} color={colors.primary} />
-              </TouchableOpacity>
-            </Animated.View>
-          ) : null}
-
-          <Animated.Text
-            entering={FadeInUp.delay(500).duration(500)}
-            style={[styles.subtitle, { color: colors.textSecondary }]}
-          >
-            Sign in to continue to your gym
-          </Animated.Text>
-        </Animated.View>
+            </View>
+            <TouchableOpacity
+              onPress={handleChangeGym}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={[styles.changeGymButton, { backgroundColor: colors.backgroundSecondary }]}
+            >
+              <Ionicons name="swap-horizontal" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
 
         {/* Form Card */}
         <Animated.View
-          entering={FadeInDown.delay(600).duration(500)}
+          entering={FadeInUp.delay(300).duration(600).springify()}
           style={styles.formCardWrapper}
         >
-          <LinearGradient
-            colors={
-              isDark
-                ? ["rgba(255, 255, 255, 0.05)", "rgba(255, 255, 255, 0.02)"]
-                : ["#FFFFFF", "#FFFFFF"]
-            }
+          <View
             style={[
               styles.formCard,
               {
-                borderColor: isDark
-                  ? "rgba(255, 255, 255, 0.1)"
-                  : "rgba(0, 0, 0, 0.06)",
-                shadowColor: isDark ? "#000000" : "rgba(0, 0, 0, 0.1)",
+                backgroundColor: colors.card,
+                borderColor: colors.border + '40',
+                shadowColor: isDark ? "#000" : colors.shadow,
               },
             ]}
           >
@@ -271,18 +267,20 @@ export default function Login() {
                 editable={!isLoading}
               />
 
-              <Input
-                label="Password"
-                placeholder="Enter your password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                leftIcon="lock-closed"
-                rightIcon={showPassword ? "eye-off" : "eye"}
-                onRightIconPress={() => setShowPassword(!showPassword)}
-                error={errors.password}
-                editable={!isLoading}
-              />
+              <View style={{ marginTop: 4 }}>
+                <Input
+                  label="Password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  leftIcon="lock-closed"
+                  rightIcon={showPassword ? "eye-off" : "eye"}
+                  onRightIconPress={() => setShowPassword(!showPassword)}
+                  error={errors.password}
+                  editable={!isLoading}
+                />
+              </View>
 
               <TouchableOpacity
                 style={styles.forgotPassword}
@@ -294,13 +292,13 @@ export default function Login() {
                 </Text>
               </TouchableOpacity>
 
-              <Animated.View style={buttonAnimatedStyle}>
+              <Animated.View style={[buttonAnimatedStyle, { marginTop: 12 }]}>
                 <TouchableOpacity
                   onPress={handleLogin}
                   disabled={isLoading}
                   activeOpacity={0.9}
                   onPressIn={() => {
-                    buttonScale.value = withSpring(0.97);
+                    buttonScale.value = withSpring(0.96);
                   }}
                   onPressOut={() => {
                     buttonScale.value = withSpring(1);
@@ -309,34 +307,29 @@ export default function Login() {
                   <LinearGradient
                     colors={
                       isLoading
-                        ? ["#CCCCCC", "#999999"]
-                        : [colors.primary, "#FF8C5A"]
+                        ? [colors.border, colors.borderLight]
+                        : [colors.primary, colors.primaryLight]
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
-                    style={[
-                      styles.loginButton,
-                      {
-                        shadowColor: colors.primary,
-                        shadowOffset: { width: 0, height: 6 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 12,
-                      },
-                    ]}
+                    style={styles.loginButton}
                   >
                     {isLoading ? (
                       <View style={styles.buttonContent}>
-                        <Ionicons name="hourglass-outline" size={18} color="#FFFFFF" />
-                        <Text style={styles.loginButtonText}>Logging in...</Text>
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                        <Text style={styles.loginButtonText}>Authenticating...</Text>
                       </View>
                     ) : (
-                      <Text style={styles.loginButtonText}>Login</Text>
+                      <View style={styles.buttonContent}>
+                        <Text style={styles.loginButtonText}>Login securely</Text>
+                        <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                      </View>
                     )}
                   </LinearGradient>
                 </TouchableOpacity>
               </Animated.View>
 
-              {/* Change Gym Link */}
+              {/* Change Gym Link (Fallback if badge isn't available) */}
               {!selectedTenantDetails && (
                 <TouchableOpacity
                   style={styles.changeGymLink}
@@ -345,46 +338,42 @@ export default function Login() {
                 >
                   <Ionicons name="business-outline" size={16} color={colors.textSecondary} />
                   <Text style={[styles.changeGymLinkText, { color: colors.textSecondary }]}>
-                    Select your gym
+                    Choose your facility first
                   </Text>
                 </TouchableOpacity>
               )}
             </View>
-          </LinearGradient>
+          </View>
         </Animated.View>
 
         {/* Info Section */}
         <Animated.View
-          entering={FadeInUp.delay(800).duration(500)}
+          entering={FadeInUp.delay(500).duration(600).springify()}
           style={styles.infoSection}
         >
           <View
             style={[
               styles.infoCard,
               {
-                backgroundColor: isDark
-                  ? "rgba(255, 107, 53, 0.08)"
-                  : "rgba(255, 107, 53, 0.05)",
-                borderColor: isDark
-                  ? "rgba(255, 107, 53, 0.2)"
-                  : "rgba(255, 107, 53, 0.15)",
+                backgroundColor: colors.primary + '0A',
+                borderColor: colors.primary + '20',
               },
             ]}
           >
             <View
               style={[
                 styles.infoIconWrapper,
-                { backgroundColor: `${colors.primary}20` },
+                { backgroundColor: `${colors.primary}15` },
               ]}
             >
-              <Ionicons name="information-circle" size={18} color={colors.primary} />
+              <Ionicons name="information" size={18} color={colors.primary} />
             </View>
             <View style={styles.infoTextContainer}>
               <Text style={[styles.infoTitle, { color: colors.text }]}>
-                Don't have an account?
+                Need an account?
               </Text>
               <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                Contact your gym administrator. Accounts are created from{" "}
+                Contact your facility administrator. New memberships are provisioned directly via{" "}
                 <Text style={{ color: colors.primary, fontWeight: "600" }}>
                   gymudaan.com
                 </Text>
@@ -392,6 +381,8 @@ export default function Login() {
             </View>
           </View>
         </Animated.View>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -401,146 +392,169 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backgroundGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  glowSphere: {
+    position: 'absolute',
+    width: SCREEN_WIDTH * 1.5,
+    height: SCREEN_WIDTH * 1.5,
+    borderRadius: SCREEN_WIDTH * 0.75,
+    opacity: 0.1,
+  },
+  glowTop: {
+    top: -SCREEN_WIDTH * 0.8,
+    right: -SCREEN_WIDTH * 0.8,
   },
   scrollContent: {
-    paddingHorizontal: SPACING.xxl,
-    paddingBottom: SPACING.xxxl + SPACING.xl,
+    paddingHorizontal: 28,
   },
-
-  // Header
   header: {
-    alignItems: "center",
-    marginBottom: SPACING.xxxl + SPACING.sm,
+    alignItems: "flex-start",
+    marginBottom: 32,
+    paddingTop: 16,
   },
-  logoWrapper: {
-    marginBottom: SPACING.xl,
-    borderRadius: 24,
-    overflow: "hidden",
-    elevation: 8,
-  },
-  logoGradient: {
-    width: 80,
-    height: 80,
+  headerIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  headerIconGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 32,
-    fontWeight: "800",
-    letterSpacing: -0.8,
-    marginBottom: SPACING.md,
-    textAlign: "center",
+    fontSize: 42,
+    fontWeight: "900",
+    lineHeight: 46,
+    letterSpacing: -1,
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    lineHeight: 24,
+    maxWidth: '96%',
+    opacity: 0.85,
   },
   gymBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm + SPACING.xs,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    marginBottom: SPACING.md,
-    gap: SPACING.sm,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 24,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   gymIconWrapper: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
+  gymBadgeLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
   gymBadgeText: {
-    fontSize: 14,
-    fontWeight: "600",
-    flex: 1,
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: -0.2,
   },
   changeGymButton: {
-    padding: SPACING.xs,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  subtitle: {
-    fontSize: 15,
-    fontWeight: "500",
-    textAlign: "center",
-    lineHeight: 22,
-  },
-
-  // Form Card
   formCardWrapper: {
-    marginBottom: SPACING.xxl,
+    marginBottom: 24,
   },
   formCard: {
     borderRadius: 24,
     borderWidth: 1,
     overflow: "hidden",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
     elevation: 6,
   },
   formContent: {
-    padding: SPACING.xxl + SPACING.xs,
-    gap: SPACING.lg,
+    padding: 24,
+    gap: 16,
   },
   forgotPassword: {
     alignSelf: "flex-end",
-    marginTop: -SPACING.xs,
+    marginTop: -8,
   },
   forgotPasswordText: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "700",
   },
   loginButton: {
-    paddingVertical: SPACING.lg + SPACING.xs,
-    paddingHorizontal: SPACING.xxl,
+    paddingVertical: 18,
     borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
     elevation: 6,
   },
   buttonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: SPACING.sm,
+    gap: 10,
   },
   loginButtonText: {
     color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "700",
-    textAlign: "center",
-    letterSpacing: 0.3,
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.5,
   },
   changeGymLink: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: SPACING.sm,
-    paddingVertical: SPACING.sm,
+    gap: 8,
+    paddingVertical: 12,
   },
   changeGymLinkText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
   },
-
-  // Info Section
   infoSection: {
-    marginBottom: SPACING.xl,
+    marginTop: 8,
   },
   infoCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    padding: SPACING.lg,
-    borderRadius: 16,
-    gap: SPACING.md,
+    padding: 20,
+    borderRadius: 20,
+    gap: 16,
     borderWidth: 1,
   },
   infoIconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -548,13 +562,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: SPACING.xs,
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 6,
+    letterSpacing: -0.2,
   },
   infoText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "500",
-    lineHeight: 19,
+    lineHeight: 22,
   },
 });
